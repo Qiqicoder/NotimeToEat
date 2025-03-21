@@ -1,5 +1,7 @@
 import SwiftUI
 import PhotosUI
+import Foundation
+
 
 struct AddFoodView: View {
     @Environment(\.dismiss) private var dismiss
@@ -88,7 +90,7 @@ struct AddFoodView: View {
     }
     
     private func saveFood() {
-        let newFood = FoodItem(
+        let newFood = Models.FoodItem(
             name: name,
             expirationDate: expirationDate,
             category: category,
@@ -99,7 +101,7 @@ struct AddFoodView: View {
         
         foodStore.addFood(newFood)
         
-        // 如果有小票图片，保存到ReceiptStore
+        // 如果有小票图片，保存到ReceiptStore（保持向后兼容）
         if let imageData = receiptImageData {
             receiptStore.addReceipt(imageData: imageData, foodItemID: newFood.id)
         }

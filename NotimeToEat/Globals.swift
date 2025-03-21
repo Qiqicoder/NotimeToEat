@@ -113,12 +113,14 @@ extension Models {
     struct Receipt: Identifiable, Codable {
         var id = UUID()
         var imageID: String
-        var foodItemID: UUID
+        var foodItemID: UUID?
+        var foodItemIDs: [UUID]
         var addedDate: Date
         
-        init(imageID: String, foodItemID: UUID, addedDate: Date = Date()) {
+        init(imageID: String, foodItemID: UUID? = nil, foodItemIDs: [UUID] = [], addedDate: Date = Date()) {
             self.imageID = imageID
             self.foodItemID = foodItemID
+            self.foodItemIDs = foodItemIDs
             self.addedDate = addedDate
         }
     }
@@ -419,18 +421,46 @@ extension Services {
         }
         
         // 添加小票
-        func addReceipt(imageData: Data, foodItemID: UUID) {
+        func addReceipt(imageData: Data, foodItemID: UUID? = nil) {
             let imageID = saveImage(imageData)
             guard !imageID.isEmpty else { return }
             
-            let receipt = Receipt(imageID: imageID, foodItemID: foodItemID)
+            var foodItemIDs: [UUID] = []
+            if let id = foodItemID {
+                foodItemIDs.append(id)
+            }
+            
+            let receipt = Receipt(imageID: imageID, foodItemID: foodItemID, foodItemIDs: foodItemIDs)
             receipts.append(receipt)
             save()
         }
         
+        // 添加没有关联食品的小票
+        func addReceiptWithoutFood(imageData: Data) {
+            addReceipt(imageData: imageData)
+        }
+        
+        // 将食品关联到小票
+        func associateFoodWithReceipt(foodID: UUID, receiptID: UUID) {
+            if let index = receipts.firstIndex(where: { $0.id == receiptID }) {
+                if !receipts[index].foodItemIDs.contains(foodID) {
+                    receipts[index].foodItemIDs.append(foodID)
+                    save()
+                }
+            }
+        }
+        
+        // 解除食品与小票的关联
+        func dissociateFoodFromReceipt(foodID: UUID, receiptID: UUID) {
+            if let index = receipts.firstIndex(where: { $0.id == receiptID }) {
+                receipts[index].foodItemIDs.removeAll { $0 == foodID }
+                save()
+            }
+        }
+        
         // 获取与食品关联的小票
         func receiptsForFood(with id: UUID) -> [Receipt] {
-            return receipts.filter { $0.foodItemID == id }
+            return receipts.filter { $0.foodItemID == id || $0.foodItemIDs.contains(id) }
         }
         
         // 删除小票
@@ -448,7 +478,13 @@ extension Services {
         func deleteReceiptsForFood(with id: UUID) {
             let foodReceipts = receiptsForFood(with: id)
             for receipt in foodReceipts {
-                deleteReceipt(receipt)
+                // 如果是主要关联，则删除整个小票
+                if receipt.foodItemID == id {
+                    deleteReceipt(receipt)
+                } else {
+                    // 否则只是解除关联
+                    dissociateFoodFromReceipt(foodID: id, receiptID: receipt.id)
+                }
             }
         }
     }
