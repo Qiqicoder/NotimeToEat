@@ -1,6 +1,13 @@
 import SwiftUI
 import Foundation
 import UserNotifications
+import PhotosUI
+
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 // 此文件在项目中导入常用类型，简化跨文件导入
 
@@ -8,10 +15,12 @@ import UserNotifications
 typealias FoodItem = Models.FoodItem
 typealias Category = Models.Category
 typealias Tag = Models.Tag
+typealias Receipt = Models.Receipt
 
 // 重新导出管理器
 typealias NotificationManager = Services.NotificationManager
 typealias FoodStore = Services.FoodStore
+typealias ReceiptStore = Services.ReceiptStore
 
 // 声明命名空间
 enum Models {}
@@ -98,6 +107,19 @@ extension Models {
             case .favorite: return .yellow
             case .leftover: return .purple
             }
+        }
+    }
+
+    struct Receipt: Identifiable, Codable {
+        var id = UUID()
+        var imageID: String
+        var foodItemID: UUID
+        var addedDate: Date
+        
+        init(imageID: String, foodItemID: UUID, addedDate: Date = Date()) {
+            self.imageID = imageID
+            self.foodItemID = foodItemID
+            self.addedDate = addedDate
         }
     }
 }
@@ -303,6 +325,131 @@ extension Services {
         // 按标签筛选
         func items(withTag tag: Tag) -> [FoodItem] {
             return foodItems.filter { $0.tags.contains(tag) }
+        }
+    }
+
+    class ReceiptStore: ObservableObject {
+        @Published var receipts: [Receipt] = []
+        
+        private static func fileURL() throws -> URL {
+            try FileManager.default.url(for: .documentDirectory,
+                                       in: .userDomainMask,
+                                       appropriateFor: nil,
+                                       create: false)
+                .appendingPathComponent("receipts.data")
+        }
+        
+        // 获取文档目录
+        static func getDocumentsDirectory() -> URL {
+            let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            return paths[0]
+        }
+        
+        // 从磁盘加载数据
+        func load() {
+            DispatchQueue.global(qos: .background).async { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let fileURL = try Self.fileURL()
+                    guard let data = try? Data(contentsOf: fileURL) else {
+                        return
+                    }
+                    
+                    let decoder = JSONDecoder()
+                    let receipts = try decoder.decode([Receipt].self, from: data)
+                    
+                    DispatchQueue.main.async {
+                        self.receipts = receipts
+                    }
+                } catch {
+                    print("ERROR: 无法加载小票列表: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // 保存数据到磁盘
+        func save() {
+            DispatchQueue.global(qos: .background).async { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let data = try JSONEncoder().encode(self.receipts)
+                    let outfile = try Self.fileURL()
+                    try data.write(to: outfile)
+                } catch {
+                    print("ERROR: 无法保存小票列表: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // 保存图像到文件系统并返回唯一ID
+        func saveImage(_ imageData: Data) -> String {
+            let id = UUID().uuidString
+            let filename = Self.getDocumentsDirectory().appendingPathComponent("\(id).jpg")
+            
+            do {
+                try imageData.write(to: filename)
+                return id
+            } catch {
+                print("ERROR: 无法保存图片: \(error.localizedDescription)")
+                return ""
+            }
+        }
+        
+        // 获取图像
+        func loadImage(id: String) -> Image? {
+            let filename = Self.getDocumentsDirectory().appendingPathComponent("\(id).jpg")
+            do {
+                let data = try Data(contentsOf: filename)
+                #if os(iOS)
+                if let uiImage = UIImage(data: data) {
+                    return Image(uiImage: uiImage)
+                }
+                #elseif os(macOS)
+                if let nsImage = NSImage(data: data) {
+                    return Image(nsImage: nsImage)
+                }
+                #endif
+                return nil
+            } catch {
+                print("ERROR: 无法加载图片: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        
+        // 添加小票
+        func addReceipt(imageData: Data, foodItemID: UUID) {
+            let imageID = saveImage(imageData)
+            guard !imageID.isEmpty else { return }
+            
+            let receipt = Receipt(imageID: imageID, foodItemID: foodItemID)
+            receipts.append(receipt)
+            save()
+        }
+        
+        // 获取与食品关联的小票
+        func receiptsForFood(with id: UUID) -> [Receipt] {
+            return receipts.filter { $0.foodItemID == id }
+        }
+        
+        // 删除小票
+        func deleteReceipt(_ receipt: Receipt) {
+            // 从文件系统删除图像
+            let filename = Self.getDocumentsDirectory().appendingPathComponent("\(receipt.imageID).jpg")
+            try? FileManager.default.removeItem(at: filename)
+            
+            // 从列表中删除
+            receipts.removeAll { $0.id == receipt.id }
+            save()
+        }
+        
+        // 删除与食品关联的所有小票
+        func deleteReceiptsForFood(with id: UUID) {
+            let foodReceipts = receiptsForFood(with: id)
+            for receipt in foodReceipts {
+                deleteReceipt(receipt)
+            }
         }
     }
 } 

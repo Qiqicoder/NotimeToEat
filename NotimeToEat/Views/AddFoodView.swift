@@ -1,14 +1,17 @@
 import SwiftUI
+import PhotosUI
 
 struct AddFoodView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var foodStore: FoodStore
+    @EnvironmentObject var receiptStore: ReceiptStore
     
     @State private var name = ""
     @State private var expirationDate = Date().addingTimeInterval(7 * 24 * 60 * 60) // 默认一周后过期
     @State private var category = Category.other
     @State private var selectedTags: Set<Tag> = []
     @State private var notes = ""
+    @State private var receiptImageData: Data? = nil
     
     var body: some View {
         NavigationView {
@@ -46,6 +49,10 @@ struct AddFoodView: View {
                         }
                         .padding(.vertical, 8)
                     }
+                }
+                
+                Section(header: Text("购物小票")) {
+                    PhotoPicker(imageData: $receiptImageData)
                 }
                 
                 Section(header: Text("备注")) {
@@ -91,6 +98,12 @@ struct AddFoodView: View {
         )
         
         foodStore.addFood(newFood)
+        
+        // 如果有小票图片，保存到ReceiptStore
+        if let imageData = receiptImageData {
+            receiptStore.addReceipt(imageData: imageData, foodItemID: newFood.id)
+        }
+        
         dismiss()
     }
 }
@@ -125,5 +138,6 @@ struct AddFoodView_Previews: PreviewProvider {
     static var previews: some View {
         AddFoodView()
             .environmentObject(FoodStore())
+            .environmentObject(ReceiptStore())
     }
 } 
