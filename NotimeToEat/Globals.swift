@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import UserNotifications
 import PhotosUI
+import Vision
 
 #if os(iOS)
 import UIKit
@@ -21,6 +22,7 @@ typealias Receipt = Models.Receipt
 typealias NotificationManager = Services.NotificationManager
 typealias FoodStore = Services.FoodStore
 typealias ReceiptStore = Services.ReceiptStore
+typealias OCRManager = Services.OCRManager
 
 // 声明命名空间
 enum Models {}
@@ -116,12 +118,14 @@ extension Models {
         var foodItemID: UUID?
         var foodItemIDs: [UUID]
         var addedDate: Date
+        var ocrText: String?
         
-        init(imageID: String, foodItemID: UUID? = nil, foodItemIDs: [UUID] = [], addedDate: Date = Date()) {
+        init(imageID: String, foodItemID: UUID? = nil, foodItemIDs: [UUID] = [], addedDate: Date = Date(), ocrText: String? = nil) {
             self.imageID = imageID
             self.foodItemID = foodItemID
             self.foodItemIDs = foodItemIDs
             self.addedDate = addedDate
+            self.ocrText = ocrText
         }
     }
 }
@@ -420,8 +424,8 @@ extension Services {
             }
         }
         
-        // 添加小票
-        func addReceipt(imageData: Data, foodItemID: UUID? = nil) {
+        // 添加带有OCR识别的小票
+        func addReceiptWithOCR(imageData: Data, foodItemID: UUID? = nil, performOCR: Bool = false) {
             let imageID = saveImage(imageData)
             guard !imageID.isEmpty else { return }
             
@@ -430,14 +434,52 @@ extension Services {
                 foodItemIDs.append(id)
             }
             
-            let receipt = Receipt(imageID: imageID, foodItemID: foodItemID, foodItemIDs: foodItemIDs)
+            var ocrText: String? = nil
+            
+            // 创建接收
+            let receipt = Receipt(imageID: imageID, foodItemID: foodItemID, foodItemIDs: foodItemIDs, ocrText: ocrText)
             receipts.append(receipt)
             save()
+            
+            // 如果需要执行OCR，则在后台进行
+            if performOCR {
+                // 在后台线程中执行OCR
+                DispatchQueue.global().async {
+                    OCRManager.shared.performOCR(for: imageData) { recognizedText in
+                        if let text = recognizedText, !text.isEmpty {
+                            // 更新接收
+                            DispatchQueue.main.async {
+                                if let index = self.receipts.firstIndex(where: { $0.id == receipt.id }) {
+                                    self.receipts[index].ocrText = text
+                                    self.save()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         
-        // 添加没有关联食品的小票
-        func addReceiptWithoutFood(imageData: Data) {
-            addReceipt(imageData: imageData)
+        // 添加没有关联食品的小票，可选OCR
+        func addReceiptWithoutFood(imageData: Data, performOCR: Bool = false) {
+            addReceiptWithOCR(imageData: imageData, performOCR: performOCR)
+        }
+        
+        // 更新特定收据的OCR文本（用于手动触发OCR）
+        func updateReceiptOCR(for receiptID: UUID) {
+            guard let receiptIndex = receipts.firstIndex(where: { $0.id == receiptID }) else {
+                return
+            }
+            
+            let receipt = receipts[receiptIndex]
+            
+            OCRManager.shared.updateOCRText(for: receipt, receiptStore: self) { success in
+                if success {
+                    print("OCR识别成功完成")
+                } else {
+                    print("OCR识别失败或无文本")
+                }
+            }
         }
         
         // 将食品关联到小票
@@ -484,6 +526,133 @@ extension Services {
                 } else {
                     // 否则只是解除关联
                     dissociateFoodFromReceipt(foodID: id, receiptID: receipt.id)
+                }
+            }
+        }
+    }
+
+    // OCR管理器
+    class OCRManager {
+        static let shared = OCRManager()
+        
+        private init() {}
+        
+        // 在Receipt视图中显示OCR文本
+        func addOCRTextDisplay(for receipt: Models.Receipt, to view: some View) -> some View {
+            if let ocrText = receipt.ocrText, !ocrText.isEmpty {
+                return AnyView(
+                    VStack {
+                        view
+                        
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("OCR识别文本:")
+                                .font(.headline)
+                                .padding(.bottom, 4)
+                            
+                            Text(ocrText)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .padding(8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.gray.opacity(0.1))
+                                )
+                        }
+                        .padding(.top, 8)
+                        .transition(.opacity)
+                    }
+                )
+            } else {
+                return AnyView(view)
+            }
+        }
+        
+        // 执行OCR识别并返回结果
+        func performOCR(for imageData: Data, completion: @escaping (String?) -> Void) {
+            #if os(iOS)
+            guard let image = UIImage(data: imageData) else {
+                completion(nil)
+                return
+            }
+            
+            guard let cgImage = image.cgImage else {
+                completion(nil)
+                return
+            }
+            #elseif os(macOS)
+            guard let nsImage = NSImage(data: imageData) else {
+                completion(nil)
+                return
+            }
+            
+            guard let cgImage = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                completion(nil)
+                return
+            }
+            #endif
+            
+            // 创建Vision请求
+            let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            let request = VNRecognizeTextRequest { request, error in
+                guard error == nil else {
+                    print("OCR识别错误: \(error!.localizedDescription)")
+                    completion(nil)
+                    return
+                }
+                
+                guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                    completion(nil)
+                    return
+                }
+                
+                // 提取识别的文本
+                let recognizedText = observations.compactMap { observation in
+                    // 获取置信度最高的候选文本
+                    return observation.topCandidates(1).first?.string
+                }.joined(separator: "\n")
+                
+                completion(recognizedText)
+            }
+            
+            // 配置请求
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            
+            // 执行请求
+            do {
+                try requestHandler.perform([request])
+            } catch {
+                print("OCR识别失败: \(error.localizedDescription)")
+                completion(nil)
+            }
+        }
+        
+        // 为特定Receipt更新OCR文本
+        func updateOCRText(for receipt: Models.Receipt, receiptStore: ReceiptStore, completion: @escaping (Bool) -> Void) {
+            guard let receiptIndex = receiptStore.receipts.firstIndex(where: { $0.id == receipt.id }) else {
+                completion(false)
+                return
+            }
+            
+            let imageID = receipt.imageID
+            let imagePath = ReceiptStore.getDocumentsDirectory().appendingPathComponent("\(imageID).jpg")
+            
+            guard let imageData = try? Data(contentsOf: imagePath) else {
+                completion(false)
+                return
+            }
+            
+            performOCR(for: imageData) { recognizedText in
+                if let text = recognizedText, !text.isEmpty {
+                    DispatchQueue.main.async {
+                        receiptStore.receipts[receiptIndex].ocrText = text
+                        receiptStore.save()
+                        completion(true)
+                    }
+                } else {
+                    completion(false)
                 }
             }
         }

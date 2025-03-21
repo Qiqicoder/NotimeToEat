@@ -32,7 +32,7 @@ struct PhotoPicker: View {
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(10)
             }
-            .onChange(of: selectedItem) {
+            .onChange(of: selectedItem) { newValue in
                 Task {
                     if let data = try? await selectedItem?.loadTransferable(type: Data.self) {
                         imageData = data

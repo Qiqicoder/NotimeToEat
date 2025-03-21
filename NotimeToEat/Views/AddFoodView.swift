@@ -2,6 +2,8 @@ import SwiftUI
 import PhotosUI
 import Foundation
 
+// The app uses these typealias declarations from Globals.swift
+// FoodStore, ReceiptStore, Category, Tag, and Models are globally defined
 
 struct AddFoodView: View {
     @Environment(\.dismiss) private var dismiss
@@ -103,7 +105,7 @@ struct AddFoodView: View {
         
         // 如果有小票图片，保存到ReceiptStore（保持向后兼容）
         if let imageData = receiptImageData {
-            receiptStore.addReceipt(imageData: imageData, foodItemID: newFood.id)
+            receiptStore.addReceiptWithOCR(imageData: imageData, foodItemID: newFood.id)
         }
         
         dismiss()

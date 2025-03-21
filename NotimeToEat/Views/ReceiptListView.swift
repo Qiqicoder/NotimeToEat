@@ -77,6 +77,8 @@ struct ReceiptCard: View {
     @EnvironmentObject var receiptStore: ReceiptStore
     @EnvironmentObject var foodStore: FoodStore
     @State private var showingFoodPicker = false
+    @State private var showingOCRText = false
+    @State private var isProcessingOCR = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -98,6 +100,25 @@ struct ReceiptCard: View {
                 }
                 
                 Spacer()
+                
+                // OCR按钮
+                if receipt.ocrText == nil && !isProcessingOCR {
+                    Button(action: {
+                        performOCR()
+                    }) {
+                        Label("OCR", systemImage: "text.viewfinder")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.2))
+                            .foregroundColor(.blue)
+                            .cornerRadius(4)
+                    }
+                } else if isProcessingOCR {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                        .padding(.horizontal, 8)
+                }
                 
                 // 添加关联食品按钮
                 Button(action: {
@@ -161,6 +182,29 @@ struct ReceiptCard: View {
                             .foregroundColor(.gray)
                     )
             }
+            
+            // OCR文本显示（如果有）
+            if let ocrText = receipt.ocrText, !ocrText.isEmpty {
+                DisclosureGroup(
+                    isExpanded: $showingOCRText,
+                    content: {
+                        Text(ocrText)
+                            .font(.footnote)
+                            .padding(8)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(6)
+                    },
+                    label: {
+                        HStack {
+                            Image(systemName: "text.viewfinder")
+                            Text("OCR识别文本")
+                                .font(.subheadline)
+                                .bold()
+                        }
+                    }
+                )
+                .padding(.top, 8)
+            }
         }
         .padding()
         .background(
@@ -170,6 +214,20 @@ struct ReceiptCard: View {
         )
         .sheet(isPresented: $showingFoodPicker) {
             FoodPickerView(receipt: receipt)
+        }
+    }
+    
+    // 执行OCR识别
+    private func performOCR() {
+        isProcessingOCR = true
+        
+        // 调用ReceiptStore的OCR更新方法
+        receiptStore.updateReceiptOCR(for: receipt.id)
+        
+        // 短暂延迟后显示结果
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isProcessingOCR = false
+            showingOCRText = true
         }
     }
     
