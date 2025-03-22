@@ -12,9 +12,14 @@
   - `Services/`: 服务和管理器
   - `Utilities/`: 工具函数
   - `Resources/`: 资源文件
+  - `Config/`: 配置和平台兼容性文件
 - `NotimeToEatTests/`: 单元测试
 - `NotimeToEatUITests/`: UI测试
 - `Package.swift`: Swift Package Manager配置文件
+
+## 重要说明
+
+此应用程序**仅支持iOS 17及以上版本**。虽然在Swift Package Manager配置中我们指定了iOS 15作为最低版本，但应用在运行时会要求iOS 17或更高版本。
 
 ## 如何使用
 
@@ -43,6 +48,15 @@ dependencies: [
     name: "NotimeToEat",
     dependencies: ["PackageName"]),
 ```
+
+### 处理编译警告
+
+如果您在编译时看到类似于`'Color' is only available in macOS 10.15 or newer`的警告，不必担心。这是由于SwiftUI是跨平台框架，而Swift Package Manager在编译时会检查所有平台的兼容性。
+
+我们在`Config/`目录中提供了兼容性文件，帮助解决这些警告：
+
+- `PlatformConfig.swift`: 包含平台特定的类型定义
+- `SwiftUICompatibility.swift`: 提供SwiftUI兼容性工具
 
 ## 开发指南
 

@@ -1,12 +1,13 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
     name: "NotimeToEat",
+    defaultLocalization: "zh",
     platforms: [
-        .iOS(.v14)
+        .iOS(.v15) // iOS 15及以上，代码中会要求iOS 17
     ],
     products: [
         // Products define the executables and libraries a package produces
@@ -23,7 +24,11 @@ let package = Package(
         .target(
             name: "NotimeToEat",
             dependencies: [],
-            path: "NotimeToEat"),
+            path: "NotimeToEat",
+            swiftSettings: [
+                .define("iOS_ONLY"), 
+                .define("SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG iOS")
+            ]),
         .testTarget(
             name: "NotimeToEatTests",
             dependencies: ["NotimeToEat"],

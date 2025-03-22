@@ -7,12 +7,18 @@
 
 import SwiftUI
 
+#if os(iOS)
 @main
 struct NotimeToEatApp: App {
     // 食品存储管理器
     @StateObject private var foodStore = FoodStore()
     // 小票存储管理器
     @StateObject private var receiptStore = ReceiptStore()
+    
+    init() {
+        // 检查平台要求】
+        PlatformCompatibility.setupUICompatibility()
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -30,3 +36,4 @@ struct NotimeToEatApp: App {
         }
     }
 }
+#endif
