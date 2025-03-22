@@ -61,6 +61,7 @@ struct NotimeToEatApp: App {
                     
                     ExpirationPopupView(
                         food: soonestExpiringFood,
+                        allFoods: foodStore.foodItems,
                         isShowing: $showExpirationPopup
                     )
                     .transition(.scale)
@@ -103,7 +104,16 @@ struct NotimeToEatApp: App {
 // 自定义过期提醒弹窗
 struct ExpirationPopupView: View {
     let food: FoodItem?
+    let allFoods: [FoodItem]
     @Binding var isShowing: Bool
+    
+    // AI服务
+    private let aiService = Services.AIService(apiKey: Services.APIKeys.deepseekAPIKey)
+    
+    // 菜品推荐状态
+    @State private var isLoadingRecommendations = false
+    @State private var recommendedDishes: [(formula: String, dish: String)] = []
+    @State private var showRecommendations = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -146,6 +156,63 @@ struct ExpirationPopupView: View {
                             .fontWeight(.medium)
                             .padding(.top, 4)
                     }
+                    
+                    // 食材推荐按钮
+                    if !showRecommendations {
+                        Button(action: {
+                            getRecipeSuggestions(for: food)
+                        }) {
+                            HStack {
+                                Image(systemName: "wand.and.stars")
+                                Text(isLoadingRecommendations ? "生成菜品中..." : "给我菜品推荐")
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(isLoadingRecommendations ? Color.gray : Color.green)
+                            .cornerRadius(8)
+                        }
+                        .disabled(isLoadingRecommendations)
+                        .padding(.top, 8)
+                    }
+                    
+                    // 推荐的菜品
+                    if showRecommendations {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("推荐菜品")
+                                .font(.headline)
+                                .padding(.top, 10)
+                            
+                            ForEach(0..<recommendedDishes.count, id: \.self) { index in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    // 菜品名称
+                                    Text(recommendedDishes[index].dish)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                    
+                                    // 公式部分
+                                    HStack(spacing: 2) {
+                                        Image(systemName: "square.stack.3d.up.fill")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.orange)
+                                        
+                                        Text(recommendedDishes[index].formula)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 12)
+                                .background(Color(UIColor.systemGray6))
+                                .cornerRadius(10)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 10)
+                    }
                 }
                 .padding(.horizontal)
             } else {
@@ -176,6 +243,41 @@ struct ExpirationPopupView: View {
         .background(Color(UIColor.systemBackground))
         .cornerRadius(20)
         .shadow(radius: 20)
+    }
+    
+    // 获取菜品推荐
+    private func getRecipeSuggestions(for food: FoodItem) {
+        isLoadingRecommendations = true
+        
+        // 获取所有其他食材的名称
+        let otherFoodNames = allFoods
+            .filter { $0.id != food.id }
+            .map { $0.name }
+        
+        // 调用AI服务获取菜品推荐
+        aiService.recommendDishesForFood(
+            expiringFood: food.name,
+            allFoods: otherFoodNames
+        ) { dishes in
+            isLoadingRecommendations = false
+            
+            if let dishes = dishes, !dishes.isEmpty {
+                // 显示推荐的菜品
+                recommendedDishes = dishes
+                withAnimation {
+                    showRecommendations = true
+                }
+            } else {
+                // 如果失败，显示默认推荐
+                recommendedDishes = [
+                    (formula: food.name, dish: "\(food.name)炒饭"),
+                    (formula: food.name, dish: "清蒸\(food.name)")
+                ]
+                withAnimation {
+                    showRecommendations = true
+                }
+            }
+        }
     }
     
     // 日期格式化

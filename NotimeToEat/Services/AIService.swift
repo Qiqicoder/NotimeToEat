@@ -23,7 +23,7 @@ extension Services {
             let payload: [String: Any] = [
                 "model": "deepseek-chat",
                 "messages": [
-                    ["role": "user", "content": "这里是购物小票OCR的识别结果：\n" + prompt + "\n\n请严格按照以下形式返回你的结果\n\nfood\n\n 请注意，请适当结合你的推断补全小票的缩写产品名称\n\n返回例子：\nbanana\napple"]
+                    ["role": "user", "content": prompt]
                 ]
             ]
             
@@ -51,12 +51,68 @@ extension Services {
         func analyzeReceiptText(_ text: String, completion: @escaping (String?) -> Void) {
             Task {
                 do {
-                    let result = try await generateCompletion(prompt: text)
+                    let receiptPrompt = "这里是购物小票OCR的识别结果：\n" + text + "\n\n请严格按照以下形式返回你的结果\n\nfood\n\n 请注意，请适当结合你的推断补全小票的缩写产品名称\n\n返回例子：\nbanana\napple"
+                    
+                    let result = try await generateCompletion(prompt: receiptPrompt)
                     DispatchQueue.main.async {
                         completion(result)
                     }
                 } catch {
                     print("AI分析错误: \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        completion(nil)
+                    }
+                }
+            }
+        }
+        
+        // 添加新方法用于推荐处理即将过期食材的菜品
+        func recommendDishesForFood(expiringFood: String, allFoods: [String], completion: @escaping ([(formula: String, dish: String)]?) -> Void) {
+            Task {
+                do {
+                    let promptTemplate = """
+                    我想处理即将过期的食材：\(expiringFood)。
+                    我冰箱里还有这些食材：\(allFoods.joined(separator: ", "))
+                    
+                    请根据我冰箱里有的食材，推荐1-3道可以处理掉\(expiringFood)的菜品。
+                    注意：
+                    1. 禁止使用冰箱中没有的食材
+                    2. 如果没有足够合适的搭配，只推荐1-2道菜即可
+                    3. 必须以公式形式给出食材组合，然后是菜品名称
+                    
+                    例如：
+                    土豆 + 大蒜 + 牛排 = 蒜香牛排炒土豆
+                    西红柿 + 鸡蛋 = 西红柿炒鸡蛋
+                    
+                    请直接返回公式和菜名，每行一个，不要包含任何其他文字。
+                    """
+                    
+                    let result = try await generateCompletion(prompt: promptTemplate)
+                    // 解析结果，按行分割并过滤空行
+                    let lines = result.split(separator: "\n")
+                        .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+                        .prefix(3) // 确保最多只返回3道菜
+                    
+                    // 将每行解析为"公式"和"菜名"
+                    var dishes: [(formula: String, dish: String)] = []
+                    
+                    for line in lines {
+                        if let equalsIndex = line.firstIndex(of: "=") {
+                            let formula = line[..<equalsIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+                            let dish = line[line.index(after: equalsIndex)...].trimmingCharacters(in: .whitespacesAndNewlines)
+                            dishes.append((formula: formula, dish: dish))
+                        } else {
+                            // 如果格式不匹配，尝试将整行作为菜名
+                            dishes.append((formula: expiringFood, dish: line))
+                        }
+                    }
+                    
+                    DispatchQueue.main.async {
+                        completion(dishes)
+                    }
+                } catch {
+                    print("AI菜品推荐错误: \(error.localizedDescription)")
                     DispatchQueue.main.async {
                         completion(nil)
                     }
