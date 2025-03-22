@@ -22,8 +22,7 @@ class AIService {
         let payload: [String: Any] = [
             "model": "deepseek-chat",
             "messages": [
-                ["role": "system", "content": "You are a helpful assistant."],
-                ["role": "user", "content": prompt]
+                ["role": "user", "content": "这里是购物小票OCR的识别结果：\n" + prompt + "\n\n请严格按照以下形式返回你的结果\n\nfood\n\n 请注意，请适当结合你的推断补全小票的缩写产品名称\n\n返回例子：\nbanana\napple"]
             ]
         ]
         
