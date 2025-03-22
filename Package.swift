@@ -18,12 +18,16 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
+        .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "8.0.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package
         .target(
             name: "NotimeToEat",
-            dependencies: [],
+            dependencies: [
+                .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
+                .product(name: "GoogleSignInSwift", package: "GoogleSignIn-iOS"),
+            ],
             path: "NotimeToEat",
             swiftSettings: [
                 .define("iOS_ONLY"), 

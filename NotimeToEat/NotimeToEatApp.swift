@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import GoogleSignIn
 
 #if os(iOS)
 @main
@@ -18,6 +19,8 @@ struct NotimeToEatApp: App {
     @StateObject private var shoppingListStore = ShoppingListStore()
     // 食物历史记录管理器
     @StateObject private var foodHistoryStore = FoodHistoryStore()
+    // 认证服务
+    @StateObject private var authService = AuthService.shared
     // 控制过期食材弹窗的显示
     @State private var showExpirationPopup = false
     // 最快过期的食材
@@ -36,6 +39,7 @@ struct NotimeToEatApp: App {
                     .environmentObject(receiptManager)
                     .environmentObject(shoppingListStore)
                     .environmentObject(foodHistoryStore)
+                    .environmentObject(authService)
                     .onAppear {
                         // 请求通知权限
                         NotificationManager.shared.requestAuthorization()
@@ -52,6 +56,10 @@ struct NotimeToEatApp: App {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                             checkAndShowExpirationAlert()
                         }
+                    }
+                    .onOpenURL { url in
+                        // 处理Google登录回调
+                        handleURL(url)
                     }
                 
                 // 自定义弹窗视图
@@ -73,6 +81,11 @@ struct NotimeToEatApp: App {
                 }
             }
         }
+    }
+    
+    // 处理URL回调
+    func handleURL(_ url: URL) {
+        GIDSignIn.sharedInstance.handle(url)
     }
     
     // 检查最早过期的食材并显示弹窗
