@@ -3,11 +3,13 @@ import PhotosUI
 import Foundation
 
 // The app uses global typealias declarations from Globals.swift
-// ReceiptStore and PhotoPicker are already defined in the project
+// ReceiptStore, FoodStore, PhotoPicker, AIService are globally defined
+// 使用全局类型
 
 struct AddReceiptView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var foodStore: FoodStore
     @State private var receiptImageData: Data? = nil
     @State private var enableOCR: Bool = false
     @State private var isProcessingOCR: Bool = false
@@ -18,8 +20,11 @@ struct AddReceiptView: View {
     @State private var isReceiptSaved: Bool = false
     @State private var savedReceiptID: UUID? = nil
     
+    // 导航状态
+    @State private var showingFoodSelection: Bool = false
+    
     // 从配置文件加载API密钥
-    private let aiService = AIService(apiKey: Services.APIKeys.deepseekAPIKey)
+    private let aiService = Services.AIService(apiKey: Services.APIKeys.deepseekAPIKey)
     
     var body: some View {
         NavigationView {
@@ -42,9 +47,31 @@ struct AddReceiptView: View {
                     Toggle("使用AI分析小票", isOn: $useAIAnalysis)
                     
                     if useAIAnalysis && !aiAnalysisResult.isEmpty {
+                        // 显示AI分析结果
                         Text(aiAnalysisResult)
                             .font(.body)
                             .padding(.top, 4)
+                        
+                        Button(action: {
+                            showingFoodSelection = true
+                        }) {
+                            Text("选择要添加的食品")
+                                .frame(maxWidth: .infinity)
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                        }
+                        .padding(.top, 8)
+                        .sheet(isPresented: $showingFoodSelection) {
+                            // 使用新的独立视图
+                            FoodSelectionView(
+                                aiAnalysisResult: aiAnalysisResult,
+                                receiptID: savedReceiptID,
+                                receiptStore: receiptStore
+                            )
+                            .environmentObject(foodStore)
+                        }
                     }
                     
                     if isProcessingAI {
@@ -95,7 +122,9 @@ struct AddReceiptView: View {
                 }
             }
             .navigationTitle("添加小票")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("取消") {
@@ -203,6 +232,7 @@ struct AddReceiptView_Previews: PreviewProvider {
     static var previews: some View {
         AddReceiptView()
             .environmentObject(ReceiptStore())
+            .environmentObject(FoodStore())
     }
 }
 #endif
