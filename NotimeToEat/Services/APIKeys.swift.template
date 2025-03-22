@@ -1,0 +1,15 @@
+import Foundation
+import SwiftUI
+
+// 获取全局命名空间
+// 如果你使用了Globals.swift，请确保这个文件在编译顺序中排在前面
+
+// 这个是API密钥模板文件
+// 复制本文件到APIKeys.swift并填入你的实际API密钥
+
+extension Services {
+    struct APIKeys {
+        // DeepSeek AI API密钥
+        static let deepseekAPIKey = "YOUR_API_KEY_HERE"
+    }
+} 

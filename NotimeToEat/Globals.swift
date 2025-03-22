@@ -119,13 +119,15 @@ extension Models {
         var foodItemIDs: [UUID]
         var addedDate: Date
         var ocrText: String?
+        var aiAnalysisResult: String?
         
-        init(imageID: String, foodItemID: UUID? = nil, foodItemIDs: [UUID] = [], addedDate: Date = Date(), ocrText: String? = nil) {
+        init(imageID: String, foodItemID: UUID? = nil, foodItemIDs: [UUID] = [], addedDate: Date = Date(), ocrText: String? = nil, aiAnalysisResult: String? = nil) {
             self.imageID = imageID
             self.foodItemID = foodItemID
             self.foodItemIDs = foodItemIDs
             self.addedDate = addedDate
             self.ocrText = ocrText
+            self.aiAnalysisResult = aiAnalysisResult
         }
     }
 }
@@ -461,8 +463,40 @@ extension Services {
         }
         
         // 添加没有关联食品的小票，可选OCR
-        func addReceiptWithoutFood(imageData: Data, performOCR: Bool = false) {
-            addReceiptWithOCR(imageData: imageData, performOCR: performOCR)
+        @discardableResult
+        func addReceiptWithoutFood(imageData: Data, performOCR: Bool = false) -> UUID {
+            let imageID = saveImage(imageData)
+            guard !imageID.isEmpty else { return UUID() } // Return a new UUID if save failed
+            
+            // 创建接收
+            let receipt = Receipt(imageID: imageID, foodItemID: nil, foodItemIDs: [], ocrText: nil)
+            receipts.append(receipt)
+            save()
+            
+            // 如果需要执行OCR，则在后台进行
+            if performOCR {
+                // 在后台线程中执行OCR
+                DispatchQueue.global().async {
+                    OCRManager.shared.performOCR(for: imageData) { recognizedText in
+                        if let text = recognizedText, !text.isEmpty {
+                            // 更新接收
+                            DispatchQueue.main.async {
+                                if let index = self.receipts.firstIndex(where: { $0.id == receipt.id }) {
+                                    self.receipts[index].ocrText = text
+                                    self.save()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return receipt.id
+        }
+        
+        // 获取特定ID的小票
+        func getReceipt(id: UUID) -> Receipt? {
+            return receipts.first(where: { $0.id == id })
         }
         
         // 更新特定收据的OCR文本（用于手动触发OCR）
@@ -479,6 +513,14 @@ extension Services {
                 } else {
                     print("OCR识别失败或无文本")
                 }
+            }
+        }
+        
+        // 更新小票的AI分析结果
+        func updateReceiptAIAnalysis(id: UUID, result: String) {
+            if let index = receipts.firstIndex(where: { $0.id == id }) {
+                receipts[index].aiAnalysisResult = result
+                save()
             }
         }
         

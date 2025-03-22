@@ -78,6 +78,7 @@ struct ReceiptCard: View {
     @EnvironmentObject var foodStore: FoodStore
     @State private var showingFoodPicker = false
     @State private var showingOCRText = false
+    @State private var showingAIAnalysis = false
     @State private var isProcessingOCR = false
     
     var body: some View {
@@ -200,6 +201,30 @@ struct ReceiptCard: View {
                             Text("OCR识别文本")
                                 .font(.subheadline)
                                 .bold()
+                        }
+                    }
+                )
+                .padding(.top, 8)
+            }
+            
+            // AI分析结果显示（如果有）
+            if let aiAnalysisResult = receipt.aiAnalysisResult, !aiAnalysisResult.isEmpty {
+                DisclosureGroup(
+                    isExpanded: $showingAIAnalysis,
+                    content: {
+                        Text(aiAnalysisResult)
+                            .font(.footnote)
+                            .padding(8)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                    },
+                    label: {
+                        HStack {
+                            Image(systemName: "brain")
+                            Text("AI分析结果")
+                                .font(.subheadline)
+                                .bold()
+                                .foregroundColor(.blue)
                         }
                     }
                 )
