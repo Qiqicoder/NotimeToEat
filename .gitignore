@@ -1,2 +1,12 @@
 # API密钥文件
 NotimeToEat/Services/APIKeys.swift
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.DS_Store
