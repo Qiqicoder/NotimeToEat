@@ -16,6 +16,8 @@ struct NotimeToEatApp: App {
     @StateObject private var receiptManager = ReceiptManager.shared
     // 购物清单管理器
     @StateObject private var shoppingListStore = ShoppingListStore()
+    // 食物历史记录管理器
+    @StateObject private var foodHistoryStore = FoodHistoryStore()
     // 控制过期食材弹窗的显示
     @State private var showExpirationPopup = false
     // 最快过期的食材
@@ -33,6 +35,7 @@ struct NotimeToEatApp: App {
                     .environmentObject(foodStore)
                     .environmentObject(receiptManager)
                     .environmentObject(shoppingListStore)
+                    .environmentObject(foodHistoryStore)
                     .onAppear {
                         // 请求通知权限
                         NotificationManager.shared.requestAuthorization()
@@ -42,6 +45,8 @@ struct NotimeToEatApp: App {
                         receiptManager.load()
                         // 加载购物清单数据
                         shoppingListStore.load()
+                        // 加载食物历史数据
+                        foodHistoryStore.load()
                         
                         // 延迟显示过期食材弹窗，确保数据已加载
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {

@@ -111,10 +111,24 @@ struct CategoryDetailView: View {
 struct SettingsView: View {
     @EnvironmentObject var foodStore: FoodStore
     @State private var notificationHours = 24 // 默认提前24小时通知
+    @State private var showingHistoryView = false
     
     var body: some View {
         NavigationView {
             Form {
+                Section(header: Text("数据统计")) {
+                    NavigationLink(destination: HistoryView()) {
+                        HStack {
+                            Image(systemName: "chart.pie")
+                                .foregroundColor(.blue)
+                            Text("食物历史统计")
+                        }
+                    }
+                    Text("查看食物消耗和浪费的统计数据")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
                 Section(header: Text("通知设置")) {
                     Stepper("提前 \(notificationHours) 小时通知", value: $notificationHours, in: 1...72)
                     Text("食物过期前将提前\(notificationHours)小时通知您")

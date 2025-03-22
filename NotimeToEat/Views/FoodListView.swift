@@ -15,11 +15,14 @@ struct FoodListView: View {
     @EnvironmentObject var foodStore: FoodStore
     @EnvironmentObject var receiptManager: ReceiptManager
     @EnvironmentObject var shoppingListStore: ShoppingListStore
+    @EnvironmentObject var foodHistoryStore: FoodHistoryStore
     @State private var showingAddFood = false
     @State private var showingAddReceipt = false
     @State private var searchText = ""
     @State private var selectedSortOption: SortOption = .expirationAsc
     @State private var isAddButtonExpanded = false
+    @State private var showingDisposalOptions = false
+    @State private var selectedFoodItem: FoodItem?
     
     var filteredItems: [FoodItem] {
         let baseItems = searchText.isEmpty ? foodStore.foodItems : foodStore.foodItems.filter { 
@@ -53,9 +56,10 @@ struct FoodListView: View {
                                 FoodItemRow(item: item)
                                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                         Button(role: .destructive) {
-                                            foodStore.deleteFood(item)
+                                            selectedFoodItem = item
+                                            showingDisposalOptions = true
                                         } label: {
-                                            Label("删除", systemImage: "trash")
+                                            Label("处理", systemImage: "archivebox")
                                         }
                                         
                                         Button {
@@ -76,9 +80,10 @@ struct FoodListView: View {
                                 FoodItemRow(item: item)
                                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                         Button(role: .destructive) {
-                                            foodStore.deleteFood(item)
+                                            selectedFoodItem = item
+                                            showingDisposalOptions = true
                                         } label: {
-                                            Label("删除", systemImage: "trash")
+                                            Label("处理", systemImage: "archivebox")
                                         }
                                         
                                         Button {
@@ -98,9 +103,10 @@ struct FoodListView: View {
                             FoodItemRow(item: item)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
-                                        foodStore.deleteFood(item)
+                                        selectedFoodItem = item
+                                        showingDisposalOptions = true
                                     } label: {
-                                        Label("删除", systemImage: "trash")
+                                        Label("处理", systemImage: "archivebox")
                                     }
                                     
                                     Button {
@@ -135,6 +141,27 @@ struct FoodListView: View {
                 }
                 .sheet(isPresented: $showingAddReceipt) {
                     AddReceiptView()
+                }
+                .confirmationDialog("如何处理食物？", isPresented: $showingDisposalOptions, titleVisibility: .visible) {
+                    Button("已消耗") {
+                        if let item = selectedFoodItem {
+                            foodStore.disposeFoodItem(item, disposalType: .consumed, historyStore: foodHistoryStore)
+                        }
+                    }
+                    Button("已浪费", role: .destructive) {
+                        if let item = selectedFoodItem {
+                            foodStore.disposeFoodItem(item, disposalType: .wasted, historyStore: foodHistoryStore)
+                        }
+                    }
+                    Button("取消", role: .cancel) {
+                        selectedFoodItem = nil
+                    }
+                } message: {
+                    if let item = selectedFoodItem {
+                        Text("请选择如何处理\"\(item.name)\"")
+                    } else {
+                        Text("请选择处理方式")
+                    }
                 }
             }
             

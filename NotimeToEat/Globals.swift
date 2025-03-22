@@ -18,11 +18,14 @@ typealias Category = Models.Category
 typealias Tag = Models.Tag
 typealias Receipt = Models.Receipt
 typealias ShoppingItem = Models.ShoppingItem
+typealias FoodHistoryEntry = Models.FoodHistoryEntry
+typealias FoodDisposalType = Models.FoodDisposalType
 
 // 重新导出管理器
 typealias NotificationManager = Services.NotificationManager
 typealias FoodStore = Services.FoodStore
 typealias ShoppingListStore = Services.ShoppingListStore
+typealias FoodHistoryStore = Services.FoodHistoryStore
 // ReceiptManager now exists as a standalone class
 // Use standard import to access it
 
@@ -147,6 +150,28 @@ extension Models {
             self.addedDate = addedDate
             self.isPurchased = isPurchased
             self.notes = notes
+        }
+    }
+
+    // 食物处理方式
+    enum FoodDisposalType: String, Codable {
+        case consumed = "已消耗"  // 正常消耗
+        case wasted = "已浪费"    // 扔掉/浪费
+    }
+    
+    // 食物历史记录条目
+    struct FoodHistoryEntry: Identifiable, Codable {
+        var id = UUID()
+        var foodName: String
+        var category: Category
+        var disposalType: FoodDisposalType
+        var disposalDate: Date
+        
+        init(foodName: String, category: Category, disposalType: FoodDisposalType, disposalDate: Date = Date()) {
+            self.foodName = foodName
+            self.category = category
+            self.disposalType = disposalType
+            self.disposalDate = disposalDate
         }
     }
 }
@@ -353,6 +378,15 @@ extension Services {
         func items(withTag tag: Tag) -> [FoodItem] {
             return foodItems.filter { $0.tags.contains(tag) }
         }
+
+        // 删除食物，并记录处理方式
+        func disposeFoodItem(_ item: FoodItem, disposalType: FoodDisposalType, historyStore: FoodHistoryStore) {
+            // 记录到历史
+            historyStore.addEntryFromFood(item, disposalType: disposalType)
+            
+            // 删除食物
+            deleteFood(item)
+        }
     }
 
     class ShoppingListStore: ObservableObject {
@@ -465,6 +499,96 @@ extension Services {
         // 按分类筛选
         func items(inCategory category: Category) -> [ShoppingItem] {
             return shoppingItems.filter { $0.category == category }
+        }
+    }
+
+    class FoodHistoryStore: ObservableObject {
+        @Published var historyEntries: [FoodHistoryEntry] = []
+        
+        private static func fileURL() throws -> URL {
+            try FileManager.default.url(for: .documentDirectory,
+                                       in: .userDomainMask,
+                                       appropriateFor: nil,
+                                       create: false)
+                .appendingPathComponent("foodHistory.data")
+        }
+        
+        // 从磁盘加载数据
+        func load() {
+            DispatchQueue.global(qos: .background).async { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let fileURL = try Self.fileURL()
+                    guard let data = try? Data(contentsOf: fileURL) else {
+                        // 如果文件不存在，使用空数组
+                        DispatchQueue.main.async {
+                            self.historyEntries = []
+                        }
+                        return
+                    }
+                    
+                    let decoder = JSONDecoder()
+                    let entries = try decoder.decode([FoodHistoryEntry].self, from: data)
+                    
+                    DispatchQueue.main.async {
+                        self.historyEntries = entries
+                    }
+                } catch {
+                    print("ERROR: 无法加载食物历史记录: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // 保存数据到磁盘
+        func save() {
+            DispatchQueue.global(qos: .background).async { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let data = try JSONEncoder().encode(self.historyEntries)
+                    let outfile = try Self.fileURL()
+                    try data.write(to: outfile)
+                } catch {
+                    print("ERROR: 无法保存食物历史记录: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // 添加历史记录
+        func addEntry(_ entry: FoodHistoryEntry) {
+            historyEntries.append(entry)
+            save()
+        }
+        
+        // 从食物项添加历史记录
+        func addEntryFromFood(_ foodItem: FoodItem, disposalType: FoodDisposalType) {
+            let entry = FoodHistoryEntry(
+                foodName: foodItem.name,
+                category: foodItem.category,
+                disposalType: disposalType
+            )
+            addEntry(entry)
+        }
+        
+        // 获取特定周的历史记录
+        func entriesForWeek(date: Date) -> [FoodHistoryEntry] {
+            let calendar = Calendar.current
+            let weekComponents = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+            
+            return historyEntries.filter { entry in
+                let entryWeekComponents = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: entry.disposalDate)
+                return entryWeekComponents.yearForWeekOfYear == weekComponents.yearForWeekOfYear &&
+                       entryWeekComponents.weekOfYear == weekComponents.weekOfYear
+            }
+        }
+        
+        // 获取特定周的统计数据
+        func weeklyStatistics(date: Date) -> (consumed: Int, wasted: Int) {
+            let weekEntries = entriesForWeek(date: date)
+            let consumed = weekEntries.filter { $0.disposalType == .consumed }.count
+            let wasted = weekEntries.filter { $0.disposalType == .wasted }.count
+            return (consumed, wasted)
         }
     }
 
