@@ -3,12 +3,13 @@ import PhotosUI
 import Foundation
 
 // The app uses these typealias declarations from Globals.swift
-// FoodStore, ReceiptStore, Category, Tag, and Models are globally defined
+// FoodStore, Category, Tag, and Models are globally defined
+// ReceiptManager is now used instead of ReceiptStore
 
 struct AddFoodView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var foodStore: FoodStore
-    @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var receiptManager: ReceiptManager
     
     @State private var name = ""
     @State private var expirationDate = Date().addingTimeInterval(7 * 24 * 60 * 60) // 默认一周后过期
@@ -103,9 +104,9 @@ struct AddFoodView: View {
         
         foodStore.addFood(newFood)
         
-        // 如果有小票图片，保存到ReceiptStore（保持向后兼容）
+        // 如果有小票图片，保存到ReceiptManager
         if let imageData = receiptImageData {
-            receiptStore.addReceiptWithOCR(imageData: imageData, foodItemID: newFood.id)
+            receiptManager.addReceiptWithOCR(imageData: imageData, foodItemID: newFood.id)
         }
         
         dismiss()
@@ -142,6 +143,6 @@ struct AddFoodView_Previews: PreviewProvider {
     static var previews: some View {
         AddFoodView()
             .environmentObject(FoodStore())
-            .environmentObject(ReceiptStore())
+            .environmentObject(ReceiptManager.shared)
     }
 } 

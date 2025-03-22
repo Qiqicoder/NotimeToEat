@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var foodStore: FoodStore
-    @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var receiptManager: ReceiptManager
     @State private var selectedTab = 0
     
     var body: some View {
@@ -40,7 +40,7 @@ struct ContentView: View {
         }
         .onAppear {
             // 加载小票数据
-            receiptStore.load()
+            receiptManager.load()
         }
     }
 }
@@ -128,5 +128,5 @@ struct SettingsView: View {
 #Preview {
     ContentView()
         .environmentObject(FoodStore())
-        .environmentObject(ReceiptStore())
+        .environmentObject(ReceiptManager.shared)
 }

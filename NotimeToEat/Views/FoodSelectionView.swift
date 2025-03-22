@@ -1,7 +1,8 @@
 import SwiftUI
 
 // 导入全局类型定义
-// FoodStore, ReceiptStore, Models.FoodItem等全局类型定义在Globals.swift中
+// FoodStore, Models.FoodItem等全局类型定义在Globals.swift中
+// ReceiptManager is now used instead of ReceiptStore
 
 struct FoodSelectionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -9,7 +10,7 @@ struct FoodSelectionView: View {
     
     let aiAnalysisResult: String
     let receiptID: UUID?
-    let receiptStore: ReceiptStore
+    let receiptManager: ReceiptManager
     
     @State private var parsedFoodItems: [String] = []
     @State private var selectedFoodItems: Set<String> = Set()
@@ -131,7 +132,7 @@ struct FoodSelectionView: View {
                 
                 // 将食品与当前小票关联
                 if let receiptID = receiptID {
-                    receiptStore.associateFoodWithReceipt(foodID: newFood.id, receiptID: receiptID)
+                    receiptManager.associateFoodWithReceipt(foodID: newFood.id, receiptID: receiptID)
                 }
             }
             
@@ -176,7 +177,7 @@ struct FoodSelectionView_Previews: PreviewProvider {
         FoodSelectionView(
             aiAnalysisResult: "香蕉\n苹果\n牛奶",
             receiptID: UUID(),
-            receiptStore: ReceiptStore()
+            receiptManager: ReceiptManager.shared
         )
         .environmentObject(FoodStore())
     }

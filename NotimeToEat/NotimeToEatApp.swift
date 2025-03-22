@@ -13,7 +13,7 @@ struct NotimeToEatApp: App {
     // 食品存储管理器
     @StateObject private var foodStore = FoodStore()
     // 小票存储管理器
-    @StateObject private var receiptStore = ReceiptStore()
+    @StateObject private var receiptManager = ReceiptManager.shared
     
     init() {
         // 检查平台要求】
@@ -24,14 +24,14 @@ struct NotimeToEatApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(foodStore)
-                .environmentObject(receiptStore)
+                .environmentObject(receiptManager)
                 .onAppear {
                     // 请求通知权限
                     NotificationManager.shared.requestAuthorization()
                     // 加载存储的食品数据
                     foodStore.load()
                     // 加载小票数据
-                    receiptStore.load()
+                    receiptManager.load()
                 }
         }
     }

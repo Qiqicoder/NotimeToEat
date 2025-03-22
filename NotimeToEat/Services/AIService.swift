@@ -46,5 +46,22 @@ extension Services {
             
             return content
         }
+        
+        // 添加新方法用于分析小票文本
+        func analyzeReceiptText(_ text: String, completion: @escaping (String?) -> Void) {
+            Task {
+                do {
+                    let result = try await generateCompletion(prompt: text)
+                    DispatchQueue.main.async {
+                        completion(result)
+                    }
+                } catch {
+                    print("AI分析错误: \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        completion(nil)
+                    }
+                }
+            }
+        }
     }
 } 

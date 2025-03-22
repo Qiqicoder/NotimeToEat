@@ -2,7 +2,7 @@ import SwiftUI
 import Foundation
 
 struct ReceiptListView: View {
-    @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var receiptManager: ReceiptManager
     @EnvironmentObject var foodStore: FoodStore
     @State private var showingAddReceipt = false
     @State private var receiptToDelete: Models.Receipt? = nil
@@ -20,7 +20,7 @@ struct ReceiptListView: View {
                         })
                     }
                     
-                    if receiptStore.receipts.isEmpty {
+                    if receiptManager.receipts.isEmpty {
                         ContentUnavailableView(
                             "暂无购物小票",
                             systemImage: "doc.text.image",
@@ -51,7 +51,7 @@ struct ReceiptListView: View {
             ) {
                 Button("删除", role: .destructive) {
                     if let receipt = receiptToDelete {
-                        receiptStore.deleteReceipt(receipt)
+                        receiptManager.deleteReceipt(receipt)
                         receiptToDelete = nil
                     }
                 }
@@ -66,7 +66,7 @@ struct ReceiptListView: View {
     
     private var sortedReceipts: [Models.Receipt] {
         // 按添加日期降序排列
-        return receiptStore.receipts.sorted { $0.addedDate > $1.addedDate }
+        return receiptManager.receipts.sorted { $0.addedDate > $1.addedDate }
     }
 }
 
@@ -74,7 +74,7 @@ struct ReceiptListView: View {
 struct ReceiptCard: View {
     let receipt: Models.Receipt
     let onDeleteTapped: () -> Void
-    @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var receiptManager: ReceiptManager
     @EnvironmentObject var foodStore: FoodStore
     @State private var showingFoodPicker = false
     @State private var showingOCRText = false
@@ -150,7 +150,7 @@ struct ReceiptCard: View {
                             
                             // 移除关联按钮
                             Button(action: {
-                                receiptStore.dissociateFoodFromReceipt(foodID: food.id, receiptID: receipt.id)
+                                receiptManager.dissociateFoodFromReceipt(foodID: food.id, receiptID: receipt.id)
                             }) {
                                 Image(systemName: "xmark.circle")
                                     .font(.caption)
@@ -167,7 +167,7 @@ struct ReceiptCard: View {
             }
             
             // 小票图片
-            if let image = receiptStore.loadImage(id: receipt.imageID) {
+            if let image = receiptManager.loadImage(id: receipt.imageID) {
                 image
                     .resizable()
                     .scaledToFit()
@@ -246,42 +246,29 @@ struct ReceiptCard: View {
     private func performOCR() {
         isProcessingOCR = true
         
-        // 调用ReceiptStore的OCR更新方法
-        receiptStore.updateReceiptOCR(for: receipt.id)
+        // 调用ReceiptManager的OCR更新方法
+        receiptManager.updateReceiptOCR(for: receipt.id)
         
-        // 短暂延迟后显示结果
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        // 模拟OCR处理完成
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             isProcessingOCR = false
-            showingOCRText = true
         }
     }
     
-    // 获取与小票关联的食物
-    private var foodsForReceipt: [Models.FoodItem]? {
-        var foods: [Models.FoodItem] = []
+    // 获取与小票关联的食品
+    private var foodsForReceipt: [FoodItem]? {
+        let ids = receipt.foodItemIDs
+        if ids.isEmpty { return nil }
         
-        // 添加传统的单一关联（向后兼容）
-        if let foodItemID = receipt.foodItemID,
-           let food = foodStore.foodItems.first(where: { $0.id == foodItemID }) {
-            foods.append(food)
-        }
-        
-        // 添加新的多重关联
-        for foodID in receipt.foodItemIDs {
-            if let food = foodStore.foodItems.first(where: { $0.id == foodID }),
-               !foods.contains(where: { $0.id == food.id }) {
-                foods.append(food)
-            }
-        }
-        
-        return foods.isEmpty ? nil : foods
+        // 筛选出存在的食品
+        return foodStore.foodItems.filter { ids.contains($0.id) }
     }
     
     // 格式化日期
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.timeStyle = .none
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter.string(from: date)
     }
@@ -292,7 +279,7 @@ struct FoodPickerView: View {
     let receipt: Models.Receipt
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var foodStore: FoodStore
-    @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var receiptManager: ReceiptManager
     
     var body: some View {
         NavigationView {
@@ -332,13 +319,13 @@ struct FoodPickerView: View {
     private func toggleFoodSelection(_ food: Models.FoodItem) {
         // 如果已经关联，则解除关联
         if receipt.foodItemIDs.contains(food.id) {
-            receiptStore.dissociateFoodFromReceipt(foodID: food.id, receiptID: receipt.id)
+            receiptManager.dissociateFoodFromReceipt(foodID: food.id, receiptID: receipt.id)
         } else if receipt.foodItemID == food.id {
             // 处理传统的单一关联
-            receiptStore.dissociateFoodFromReceipt(foodID: food.id, receiptID: receipt.id)
+            receiptManager.dissociateFoodFromReceipt(foodID: food.id, receiptID: receipt.id)
         } else {
             // 否则添加关联
-            receiptStore.associateFoodWithReceipt(foodID: food.id, receiptID: receipt.id)
+            receiptManager.associateFoodWithReceipt(foodID: food.id, receiptID: receipt.id)
         }
     }
 }
@@ -347,7 +334,7 @@ struct FoodPickerView: View {
 struct ReceiptListView_Previews: PreviewProvider {
     static var previews: some View {
         ReceiptListView()
-            .environmentObject(ReceiptStore())
+            .environmentObject(ReceiptManager.shared)
             .environmentObject(FoodStore())
     }
 }

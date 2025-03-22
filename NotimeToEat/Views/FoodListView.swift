@@ -13,7 +13,7 @@ enum SortOption: String, CaseIterable, Identifiable {
 
 struct FoodListView: View {
     @EnvironmentObject var foodStore: FoodStore
-    @EnvironmentObject var receiptStore: ReceiptStore
+    @EnvironmentObject var receiptManager: ReceiptManager
     @State private var showingAddFood = false
     @State private var showingAddReceipt = false
     @State private var searchText = ""
@@ -253,6 +253,6 @@ struct FoodListView_Previews: PreviewProvider {
     static var previews: some View {
         FoodListView()
             .environmentObject(FoodStore())
-            .environmentObject(ReceiptStore())
+            .environmentObject(ReceiptManager.shared)
     }
 } 
