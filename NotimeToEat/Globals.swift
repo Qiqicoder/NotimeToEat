@@ -17,10 +17,12 @@ typealias FoodItem = Models.FoodItem
 typealias Category = Models.Category
 typealias Tag = Models.Tag
 typealias Receipt = Models.Receipt
+typealias ShoppingItem = Models.ShoppingItem
 
 // 重新导出管理器
 typealias NotificationManager = Services.NotificationManager
 typealias FoodStore = Services.FoodStore
+typealias ShoppingListStore = Services.ShoppingListStore
 // ReceiptManager now exists as a standalone class
 // Use standard import to access it
 
@@ -127,6 +129,24 @@ extension Models {
             self.addedDate = addedDate
             self.ocrText = ocrText
             self.aiAnalysisResult = aiAnalysisResult
+        }
+    }
+    
+    // 购物清单项目
+    struct ShoppingItem: Identifiable, Codable {
+        var id = UUID()
+        var name: String
+        var category: Category
+        var addedDate: Date
+        var isPurchased: Bool
+        var notes: String?
+        
+        init(name: String, category: Category = .other, addedDate: Date = Date(), isPurchased: Bool = false, notes: String? = nil) {
+            self.name = name
+            self.category = category
+            self.addedDate = addedDate
+            self.isPurchased = isPurchased
+            self.notes = notes
         }
     }
 }
@@ -332,6 +352,119 @@ extension Services {
         // 按标签筛选
         func items(withTag tag: Tag) -> [FoodItem] {
             return foodItems.filter { $0.tags.contains(tag) }
+        }
+    }
+
+    class ShoppingListStore: ObservableObject {
+        @Published var shoppingItems: [ShoppingItem] = []
+        
+        private static func fileURL() throws -> URL {
+            try FileManager.default.url(for: .documentDirectory,
+                                       in: .userDomainMask,
+                                       appropriateFor: nil,
+                                       create: false)
+                .appendingPathComponent("shoppingItems.data")
+        }
+        
+        // 从磁盘加载数据
+        func load() {
+            DispatchQueue.global(qos: .background).async { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let fileURL = try Self.fileURL()
+                    guard let data = try? Data(contentsOf: fileURL) else {
+                        // 如果文件不存在，使用空数组
+                        DispatchQueue.main.async {
+                            self.shoppingItems = []
+                        }
+                        return
+                    }
+                    
+                    let decoder = JSONDecoder()
+                    let items = try decoder.decode([ShoppingItem].self, from: data)
+                    
+                    DispatchQueue.main.async {
+                        self.shoppingItems = items
+                    }
+                } catch {
+                    print("ERROR: 无法加载购物清单: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // 保存数据到磁盘
+        func save() {
+            DispatchQueue.global(qos: .background).async { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let data = try JSONEncoder().encode(self.shoppingItems)
+                    let outfile = try Self.fileURL()
+                    try data.write(to: outfile)
+                } catch {
+                    print("ERROR: 无法保存购物清单: \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // 添加新商品
+        func addItem(_ item: ShoppingItem) {
+            shoppingItems.append(item)
+            save()
+        }
+        
+        // 根据FoodItem创建并添加购物项
+        func addFromFood(_ foodItem: FoodItem) {
+            let item = ShoppingItem(
+                name: foodItem.name,
+                category: foodItem.category,
+                notes: foodItem.notes
+            )
+            addItem(item)
+        }
+        
+        // 更新现有商品
+        func updateItem(_ item: ShoppingItem) {
+            if let index = shoppingItems.firstIndex(where: { $0.id == item.id }) {
+                shoppingItems[index] = item
+                save()
+            }
+        }
+        
+        // 删除商品
+        func deleteItem(_ item: ShoppingItem) {
+            shoppingItems.removeAll { $0.id == item.id }
+            save()
+        }
+        
+        // 标记为已购买
+        func markAsPurchased(_ item: ShoppingItem) {
+            var updatedItem = item
+            updatedItem.isPurchased = true
+            updateItem(updatedItem)
+        }
+        
+        // 标记为未购买
+        func markAsNotPurchased(_ item: ShoppingItem) {
+            var updatedItem = item
+            updatedItem.isPurchased = false
+            updateItem(updatedItem)
+        }
+        
+        // 未购买的商品
+        var unpurchasedItems: [ShoppingItem] {
+            return shoppingItems.filter { !$0.isPurchased }
+        }
+        
+        // 已购买的商品
+        var purchasedItems: [ShoppingItem] {
+            return shoppingItems.filter { $0.isPurchased }
+        }
+        
+        // 按分类筛选
+        func items(inCategory category: Category) -> [ShoppingItem] {
+            return shoppingItems.filter { $0.category == category }
         }
     }
 

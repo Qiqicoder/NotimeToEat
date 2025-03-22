@@ -14,6 +14,7 @@ enum SortOption: String, CaseIterable, Identifiable {
 struct FoodListView: View {
     @EnvironmentObject var foodStore: FoodStore
     @EnvironmentObject var receiptManager: ReceiptManager
+    @EnvironmentObject var shoppingListStore: ShoppingListStore
     @State private var showingAddFood = false
     @State private var showingAddReceipt = false
     @State private var searchText = ""
@@ -50,9 +51,21 @@ struct FoodListView: View {
                         Section(header: Text("即将过期")) {
                             ForEach(sortItems(foodStore.expiringSoonItems)) { item in
                                 FoodItemRow(item: item)
-                            }
-                            .onDelete { indexSet in
-                                deleteItems(from: foodStore.expiringSoonItems, at: indexSet)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button(role: .destructive) {
+                                            foodStore.deleteFood(item)
+                                        } label: {
+                                            Label("删除", systemImage: "trash")
+                                        }
+                                        
+                                        Button {
+                                            foodStore.deleteFood(item)
+                                            shoppingListStore.addFromFood(item)
+                                        } label: {
+                                            Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
+                                        }
+                                        .tint(.green)
+                                    }
                             }
                         }
                     }
@@ -61,9 +74,21 @@ struct FoodListView: View {
                         Section(header: Text("已过期")) {
                             ForEach(sortItems(foodStore.expiredItems)) { item in
                                 FoodItemRow(item: item)
-                            }
-                            .onDelete { indexSet in
-                                deleteItems(from: foodStore.expiredItems, at: indexSet)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button(role: .destructive) {
+                                            foodStore.deleteFood(item)
+                                        } label: {
+                                            Label("删除", systemImage: "trash")
+                                        }
+                                        
+                                        Button {
+                                            foodStore.deleteFood(item)
+                                            shoppingListStore.addFromFood(item)
+                                        } label: {
+                                            Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
+                                        }
+                                        .tint(.green)
+                                    }
                             }
                         }
                     }
@@ -71,9 +96,21 @@ struct FoodListView: View {
                     Section(header: Text("所有食物")) {
                         ForEach(filteredItems) { item in
                             FoodItemRow(item: item)
-                        }
-                        .onDelete { indexSet in
-                            deleteItems(from: filteredItems, at: indexSet)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) {
+                                        foodStore.deleteFood(item)
+                                    } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }
+                                    
+                                    Button {
+                                        foodStore.deleteFood(item)
+                                        shoppingListStore.addFromFood(item)
+                                    } label: {
+                                        Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
+                                    }
+                                    .tint(.green)
+                                }
                         }
                     }
                 }
@@ -254,5 +291,6 @@ struct FoodListView_Previews: PreviewProvider {
         FoodListView()
             .environmentObject(FoodStore())
             .environmentObject(ReceiptManager.shared)
+            .environmentObject(ShoppingListStore())
     }
 } 

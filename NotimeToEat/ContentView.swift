@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var foodStore: FoodStore
     @EnvironmentObject var receiptManager: ReceiptManager
+    @EnvironmentObject var shoppingListStore: ShoppingListStore
     @State private var selectedTab = 0
     
     var body: some View {
@@ -26,21 +27,29 @@ struct ContentView: View {
                 }
                 .tag(1)
             
+            ShoppingListView()
+                .tabItem {
+                    Label("购买清单", systemImage: "cart")
+                }
+                .tag(2)
+            
             ReceiptListView()
                 .tabItem {
                     Label("小票", systemImage: "doc.text.image")
                 }
-                .tag(2)
+                .tag(3)
             
             SettingsView()
                 .tabItem {
                     Label("设置", systemImage: "gear")
                 }
-                .tag(3)
+                .tag(4)
         }
         .onAppear {
             // 加载小票数据
             receiptManager.load()
+            // 加载购物清单数据
+            shoppingListStore.load()
         }
     }
 }
@@ -71,18 +80,28 @@ struct CategoryView: View {
 
 struct CategoryDetailView: View {
     @EnvironmentObject var foodStore: FoodStore
+    @EnvironmentObject var shoppingListStore: ShoppingListStore
     let category: Category
     
     var body: some View {
         List {
             ForEach(foodStore.items(inCategory: category)) { item in
                 FoodItemRow(item: item)
-            }
-            .onDelete { indexSet in
-                let itemsToDelete = indexSet.map { foodStore.items(inCategory: category)[$0] }
-                for item in itemsToDelete {
-                    foodStore.deleteFood(item)
-                }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            foodStore.deleteFood(item)
+                        } label: {
+                            Label("删除", systemImage: "trash")
+                        }
+                        
+                        Button {
+                            foodStore.deleteFood(item)
+                            shoppingListStore.addFromFood(item)
+                        } label: {
+                            Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
+                        }
+                        .tint(.green)
+                    }
             }
         }
         .navigationTitle(category.rawValue)
@@ -129,4 +148,5 @@ struct SettingsView: View {
     ContentView()
         .environmentObject(FoodStore())
         .environmentObject(ReceiptManager.shared)
+        .environmentObject(ShoppingListStore())
 }
