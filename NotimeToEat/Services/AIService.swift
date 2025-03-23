@@ -51,7 +51,25 @@ extension Services {
         func analyzeReceiptText(_ text: String, completion: @escaping (String?) -> Void) {
             Task {
                 do {
-                    let receiptPrompt = "这里是购物小票OCR的识别结果：\n" + text + "\n\n请严格按照以下形式返回你的结果\n\nfood\n\n 请注意，请适当结合你的推断补全小票的缩写产品名称\n\n返回例子：\nbanana\napple"
+                    let receiptPrompt = """
+                    这里是购物小票OCR的识别结果：
+                    
+                    \(text)
+                    
+                    请严格按照以下格式分析并返回结果:
+                    食品名称|种类|保质期天数
+                    
+                    请注意:
+                    1. 请适当结合你的推断补全小票的缩写产品名称
+                    2. 种类请分配为以下之一: 肉类, 蔬菜, 水果, 海鲜, 乳制品, 零食, 饮料, 调味品, 主食, 其他
+                    3. 保质期天数请根据常识预估, 例如肉类约7天, 新鲜蔬果约7-14天, 乳制品约10-20天, 零食约180天等
+                    4. 每行一个食品, 用竖线'|'分隔字段
+                    
+                    返回示例:
+                    香蕉|水果|7
+                    牛奶|乳制品|14
+                    面包|主食|5
+                    """
                     
                     let result = try await generateCompletion(prompt: receiptPrompt)
                     DispatchQueue.main.async {

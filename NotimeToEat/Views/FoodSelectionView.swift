@@ -1,8 +1,7 @@
 import SwiftUI
 
-// 导入全局类型定义
-// FoodStore, Models.FoodItem等全局类型定义在Globals.swift中
-// ReceiptManager is now used instead of ReceiptStore
+// We need to use the global type definitions
+// No additional imports needed since all required types are exposed through Globals.swift
 
 struct FoodSelectionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -12,7 +11,30 @@ struct FoodSelectionView: View {
     let receiptID: UUID?
     let receiptManager: ReceiptManager
     
-    @State private var parsedFoodItems: [String] = []
+    // 更新后的数据结构，包含解析后的食品名称、类别和保质期
+    struct ParsedFood {
+        let name: String
+        let category: String
+        let expirationDays: Int
+        
+        // 将类别字符串转换为Models.Category枚举
+        var categoryEnum: Models.Category {
+            switch category {
+            case "肉类": return .meat
+            case "蔬菜": return .vegetable
+            case "水果": return .fruit
+            case "海鲜": return .seafood
+            case "乳制品": return .dairy
+            case "零食": return .snack
+            case "饮料": return .beverage
+            case "调味品": return .condiment
+            case "主食", "谷物": return .grain
+            default: return .other
+            }
+        }
+    }
+    
+    @State private var parsedFoodItems: [ParsedFood] = []
     @State private var selectedFoodItems: Set<String> = Set()
     @State private var isAddingFood: Bool = false
     @State private var showSuccessMessage: Bool = false
@@ -22,12 +44,12 @@ struct FoodSelectionView: View {
             VStack {
                 List {
                     Section(header: Text("从小票中识别到的商品")) {
-                        ForEach(parsedFoodItems, id: \.self) { foodItem in
+                        ForEach(parsedFoodItems, id: \.name) { foodItem in
                             FoodItemSelectionRow(
-                                foodName: foodItem,
-                                isSelected: selectedFoodItems.contains(foodItem),
+                                foodName: "\(foodItem.name) (\(foodItem.category), \(foodItem.expirationDays)天)",
+                                isSelected: selectedFoodItems.contains(foodItem.name),
                                 onToggle: {
-                                    toggleFoodSelection(foodItem)
+                                    toggleFoodSelection(foodItem.name)
                                 }
                             )
                         }
@@ -90,25 +112,51 @@ struct FoodSelectionView: View {
         // 将AI分析结果按行分割
         let lines = aiAnalysisResult.split(separator: "\n")
         
-        // 过滤掉空行和可能的标题行
-        parsedFoodItems = lines
-            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty && !$0.lowercased().contains("food:") && !$0.lowercased().contains("food") }
-            // 如果行包含价格信息，只保留商品名称
-            .map { line -> String in
-                if let priceRange = line.range(of: #"\d+(\.\d+)?(元|￥|¥|$)?"#, options: .regularExpression) {
-                    return String(line[..<priceRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-                }
-                return line
+        // 过滤掉空行和可能的标题行，解析格式化数据
+        var parsedItems: [ParsedFood] = []
+        
+        for line in lines {
+            let trimmedLine = String(line).trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // 忽略空行和可能的标题行
+            if trimmedLine.isEmpty || 
+               trimmedLine.lowercased().contains("食品名称") ||
+               trimmedLine.lowercased().contains("格式") {
+                continue
             }
+            
+            // 按"|"分割字段
+            let components = trimmedLine.split(separator: "|").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            
+            if components.count >= 3 {
+                let name = components[0]
+                let category = components[1]
+                let expirationDays = Int(components[2]) ?? 7 // 默认7天，如果无法解析
+                
+                parsedItems.append(ParsedFood(
+                    name: name,
+                    category: category,
+                    expirationDays: expirationDays
+                ))
+            } else if !trimmedLine.isEmpty {
+                // 如果格式不匹配但不为空，添加基本信息
+                parsedItems.append(ParsedFood(
+                    name: trimmedLine,
+                    category: "其他",
+                    expirationDays: 7
+                ))
+            }
+        }
+        
+        self.parsedFoodItems = parsedItems
     }
     
     // 切换食品选择状态
-    private func toggleFoodSelection(_ foodItem: String) {
-        if selectedFoodItems.contains(foodItem) {
-            selectedFoodItems.remove(foodItem)
+    private func toggleFoodSelection(_ foodName: String) {
+        if selectedFoodItems.contains(foodName) {
+            selectedFoodItems.remove(foodName)
         } else {
-            selectedFoodItems.insert(foodItem)
+            selectedFoodItems.insert(foodName)
         }
     }
     
@@ -118,21 +166,27 @@ struct FoodSelectionView: View {
         
         // 创建一个延迟，以展示加载状态
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            for foodItem in selectedFoodItems {
-                let newFood = Models.FoodItem(
-                    name: foodItem,
-                    expirationDate: Date().addingTimeInterval(7 * 24 * 60 * 60), // 默认一周后过期
-                    category: Models.Category.other,  // 默认分类为"其他"
-                    tags: [],  // 暂无标签
-                    addedDate: Date()  // 设置购买日期为当前日期
-                )
-                
-                // 添加食品到食品清单
-                foodStore.addFood(newFood)
-                
-                // 将食品与当前小票关联
-                if let receiptID = receiptID {
-                    receiptManager.associateFoodWithReceipt(foodID: newFood.id, receiptID: receiptID)
+            for foodName in selectedFoodItems {
+                // 查找匹配的解析食品项
+                if let parsedFood = parsedFoodItems.first(where: { $0.name == foodName }) {
+                    // 根据保质期天数计算过期日期
+                    let expirationDate = Calendar.current.date(byAdding: .day, value: parsedFood.expirationDays, to: Date()) ?? Date().addingTimeInterval(7 * 24 * 60 * 60)
+                    
+                    let newFood = Models.FoodItem(
+                        name: parsedFood.name,
+                        expirationDate: expirationDate,
+                        category: parsedFood.categoryEnum,  // 使用转换后的枚举类型
+                        tags: [],  // 暂无标签
+                        addedDate: Date()  // 设置购买日期为当前日期
+                    )
+                    
+                    // 添加食品到食品清单
+                    foodStore.addFood(newFood)
+                    
+                    // 将食品与当前小票关联
+                    if let receiptID = receiptID {
+                        receiptManager.associateFoodWithReceipt(foodID: newFood.id, receiptID: receiptID)
+                    }
                 }
             }
             
@@ -175,7 +229,7 @@ struct FoodItemSelectionRow: View {
 struct FoodSelectionView_Previews: PreviewProvider {
     static var previews: some View {
         FoodSelectionView(
-            aiAnalysisResult: "香蕉\n苹果\n牛奶",
+            aiAnalysisResult: "香蕉|水果|7\n苹果|水果|14\n牛奶|乳制品|10",
             receiptID: UUID(),
             receiptManager: ReceiptManager.shared
         )
