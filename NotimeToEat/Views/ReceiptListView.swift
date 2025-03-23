@@ -4,9 +4,13 @@ import Foundation
 struct ReceiptListView: View {
     @EnvironmentObject var receiptManager: ReceiptManager
     @EnvironmentObject var foodStore: FoodStore
-    @State private var showingAddReceipt = false
+    @State private var showingCamera = false
+    @State private var showingPhotoLibrary = false
+    @State private var receiptImageData: Data? = nil
+    @State private var showingProcessing = false
     @State private var receiptToDelete: Models.Receipt? = nil
     @State private var showingDeleteConfirmation = false
+    @State private var showingActionSheet = false
     
     var body: some View {
         NavigationView {
@@ -35,14 +39,56 @@ struct ReceiptListView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        showingAddReceipt = true
+                        // 显示选择菜单
+                        showingActionSheet = true
                     }) {
                         Image(systemName: "plus")
                     }
                 }
             }
-            .sheet(isPresented: $showingAddReceipt) {
-                AddReceiptView()
+            .actionSheet(isPresented: $showingActionSheet) {
+                ActionSheet(
+                    title: Text("添加小票"),
+                    message: Text("请选择添加方式"),
+                    buttons: [
+                        .default(Text("拍照")) {
+                            showingCamera = true
+                        },
+                        .default(Text("从相册选择")) {
+                            showingPhotoLibrary = true
+                        },
+                        .cancel(Text("取消"))
+                    ]
+                )
+            }
+            .sheet(isPresented: $showingCamera) {
+                #if os(iOS)
+                ImagePickerView(imageData: $receiptImageData, sourceType: .camera, onDismiss: {
+                    showingCamera = false
+                    if let imageData = receiptImageData {
+                        showingProcessing = true
+                    }
+                })
+                #endif
+            }
+            .sheet(isPresented: $showingPhotoLibrary) {
+                #if os(iOS)
+                ImagePickerView(imageData: $receiptImageData, sourceType: .photoLibrary, onDismiss: {
+                    showingPhotoLibrary = false
+                    if let imageData = receiptImageData {
+                        showingProcessing = true
+                    }
+                })
+                #endif
+            }
+            .sheet(isPresented: $showingProcessing) {
+                if let imageData = receiptImageData {
+                    ReceiptProcessingView(imageData: imageData)
+                        .onDisappear {
+                            // 清除图像数据
+                            receiptImageData = nil
+                        }
+                }
             }
             .confirmationDialog(
                 "确定要删除这张小票吗？",

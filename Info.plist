@@ -23,6 +23,10 @@
 	</array>
 	<key>GIDClientID</key>
 	<string>174740323091-0lenrlhnst4udtcf9o02ub169gevg8e7.apps.googleusercontent.com</string>
+	<key>NSCameraUsageDescription</key>
+	<string>需要使用相机来拍摄小票照片</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问相册来选择小票照片</string>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

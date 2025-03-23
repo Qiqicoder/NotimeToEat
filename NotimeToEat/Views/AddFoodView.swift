@@ -56,10 +56,6 @@ struct AddFoodView: View {
                     }
                 }
                 
-                Section(header: Text("购物小票")) {
-                    PhotoPicker(imageData: $receiptImageData)
-                }
-                
                 Section(header: Text("备注")) {
                     TextEditor(text: $notes)
                         .frame(minHeight: 100)
