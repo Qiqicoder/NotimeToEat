@@ -80,17 +80,7 @@ struct FoodListView: View {
                 .navigationTitle(NSLocalizedString("app_name", comment: ""))
                 .searchable(text: $searchText, prompt: NSLocalizedString("search_food", comment: ""))
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Menu {
-                            Picker(NSLocalizedString("sort_option", comment: ""), selection: $selectedSortOption) {
-                                ForEach(SortOption.allCases) { option in
-                                    Text(NSLocalizedString(option.rawValue, comment: "")).tag(option)
-                                }
-                            }
-                        } label: {
-                            Label(NSLocalizedString("sort_option", comment: ""), systemImage: "arrow.up.arrow.down")
-                        }
-                    }
+                    ToolbarContent()
                 }
                 .sheet(isPresented: $showingAddFood) {
                     AddFoodView()
@@ -105,6 +95,21 @@ struct FoodListView: View {
                     actions: { DisposalDialogButtons() },
                     message: { DisposalDialogMessage() }
                 )
+        }
+    }
+    
+    @ToolbarContentBuilder
+    private func ToolbarContent() -> some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Menu {
+                Picker(NSLocalizedString("sort_option", comment: ""), selection: $selectedSortOption) {
+                    ForEach(SortOption.allCases, id: \.id) { option in
+                        Text(NSLocalizedString(option.rawValue, comment: "")).tag(option)
+                    }
+                }
+            } label: {
+                Label(NSLocalizedString("sort_option", comment: ""), systemImage: "arrow.up.arrow.down")
+            }
         }
     }
     
@@ -325,7 +330,7 @@ struct FoodItemRow: View {
                     HStack {
                         Image(systemName: item.category.iconName)
                             .foregroundColor(.secondary)
-                        Text(item.category.rawValue)
+                        Text(NSLocalizedString(item.category.displayName, comment: ""))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

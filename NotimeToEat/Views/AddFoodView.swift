@@ -118,7 +118,7 @@ struct TagButton: View {
         Button(action: action) {
             HStack {
                 Image(systemName: tag.iconName)
-                Text(tag.rawValue)
+                Text(NSLocalizedString(tag.displayName, comment: ""))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

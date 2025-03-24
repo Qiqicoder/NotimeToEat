@@ -94,7 +94,7 @@ struct HistoryView: View {
                                         Text(entry.foodName)
                                             .font(.headline)
                                         
-                                        Text(entry.category.rawValue)
+                                        Text(NSLocalizedString(entry.category.displayName, comment: ""))
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         
@@ -106,7 +106,7 @@ struct HistoryView: View {
                                     Spacer()
                                     
                                     // Disposal type indicator
-                                    Text(entry.disposalType.rawValue)
+                                    Text(NSLocalizedString(entry.disposalType.displayName, comment: ""))
                                         .font(.subheadline)
                                         .padding(6)
                                         .background(

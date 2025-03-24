@@ -56,6 +56,7 @@
 "alpha_asc" = "Alpha (A-Z)";
 "date_recent" = "Date (recent)";
 "date_old" = "Date (old)";
+"expiring_soon" = "Expiring Soon";
 
 // Settings Page
 "section_account" = "Account";

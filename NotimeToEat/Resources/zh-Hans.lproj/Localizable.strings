@@ -56,6 +56,7 @@
 "alpha_asc" = "按名称 (A-Z)";
 "date_recent" = "按过期日期 (最近)";
 "date_old" = "按过期日期 (最远)";
+"expiring_soon" = "即将过期";
 
 // 设置页面
 "section_account" = "账户";

@@ -13,7 +13,7 @@ struct CategoryView: View {
                         HStack {
                             Image(systemName: category.iconName)
                                 .foregroundColor(.blue)
-                            Text(category.rawValue)
+                            Text(NSLocalizedString(category.displayName, comment: ""))
                             Spacer()
                             Text("\(foodStore.items(inCategory: category).count)")
                                 .foregroundColor(.gray)
