@@ -189,9 +189,10 @@ struct FoodNameInputView: View {
             let englishFoodNames = foodDatabase.allEnglishFoodNames
             print("DEBUG: Retrieved \(englishFoodNames.count) English food names from database")
             
-            // 处理英文食物名称
+            // 处理英文食物名称 - 只匹配前缀
             for englishName in englishFoodNames {
-                if englishName.localizedCaseInsensitiveContains(text) {
+                // 只保留以输入文本开头的项目
+                if englishName.lowercased().hasPrefix(text.lowercased()) {
                     // 找到对应的中文名和分类
                     let chineseName = foodDatabase.getChineseNameByEnglishName(englishName)
                     let category = chineseName != nil ? 
@@ -218,7 +219,11 @@ struct FoodNameInputView: View {
         
         // 去重并按显示名称排序
         let uniqueSuggestions = Array(Set(allSuggestions))
-        suggestions = uniqueSuggestions.sorted { $0.displayName < $1.displayName }
+        
+        // 改进的排序算法，优化字母排序
+        suggestions = uniqueSuggestions.sorted { (a, b) -> Bool in
+            return a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
+        }
         
         // 限制建议数量
         if suggestions.count > 15 {

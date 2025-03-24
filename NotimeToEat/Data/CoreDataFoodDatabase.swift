@@ -49,6 +49,9 @@ class CoreDataFoodDatabase: ObservableObject {
             names.append(contentsOf: englishNames)
             let uniqueNames = Array(Set(names))
             
+            // Sort alphabetically
+            let sortedNames = uniqueNames.sorted()
+            
             // Print the first few entries for debugging
             let maxEntriesToShow = min(5, results.count)
             for i in 0..<maxEntriesToShow {
@@ -59,8 +62,8 @@ class CoreDataFoodDatabase: ObservableObject {
                 print("DEBUG: Entry \(i): chineseName='\(name)', englishName='\(englishName)', category='\(category)'")
             }
             
-            print("DEBUG: Returning \(uniqueNames.count) food names (combined Chinese and English)")
-            return uniqueNames
+            print("DEBUG: Returning \(sortedNames.count) food names (combined Chinese and English, alphabetically sorted)")
+            return sortedNames
         } catch {
             print("Error fetching food names: \(error.localizedDescription)")
             return []
@@ -95,8 +98,11 @@ class CoreDataFoodDatabase: ObservableObject {
                 names.append(contentsOf: englishNames)
                 let uniqueNames = Array(Set(names))
                 
-                print("DEBUG: Found \(uniqueNames.count) foods in category \(categoryString) (combined Chinese and English)")
-                return uniqueNames
+                // Sort alphabetically
+                let sortedNames = uniqueNames.sorted()
+                
+                print("DEBUG: Found \(sortedNames.count) foods in category \(categoryString) (combined Chinese and English, alphabetically sorted)")
+                return sortedNames
             }
         } catch {
             print("Error fetching food names for category \(categoryString): \(error.localizedDescription)")
@@ -131,8 +137,11 @@ class CoreDataFoodDatabase: ObservableObject {
             names.append(contentsOf: englishNames)
             let uniqueNames = Array(Set(names))
             
-            print("DEBUG: Found \(uniqueNames.count) matching foods (combined Chinese and English)")
-            return uniqueNames
+            // Sort alphabetically
+            let sortedNames = uniqueNames.sorted()
+            
+            print("DEBUG: Found \(sortedNames.count) matching foods (combined Chinese and English, alphabetically sorted)")
+            return sortedNames
         } catch {
             print("Error searching food names: \(error.localizedDescription)")
             return []
@@ -368,9 +377,12 @@ class CoreDataFoodDatabase: ObservableObject {
             let englishNames = results.compactMap { $0.value(forKey: "englishName") as? String }
                 .filter { !$0.isEmpty }
             
-            print("DEBUG: Found \(englishNames.count) English food names")
+            // 按字母顺序排序
+            let sortedNames = englishNames.sorted()
             
-            return englishNames
+            print("DEBUG: Found \(sortedNames.count) English food names (alphabetically sorted)")
+            
+            return sortedNames
         } catch {
             print("Error fetching English food names: \(error.localizedDescription)")
             return []
