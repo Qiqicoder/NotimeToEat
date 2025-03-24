@@ -142,7 +142,7 @@ struct ExpirationPopupView: View {
                 .padding(.top)
             
             // 标题
-            Text(food != nil ? "食材过期提醒" : "冰箱状态")
+            Text(food != nil ? NSLocalizedString("food_expiration_reminder", comment: "") : NSLocalizedString("refrigerator_status", comment: ""))
                 .font(.headline)
                 .fontWeight(.bold)
             
@@ -156,20 +156,20 @@ struct ExpirationPopupView: View {
                     
                     HStack {
                         Image(systemName: "calendar")
-                        Text("过期时间：\(dateFormatter.string(from: food.expirationDate))")
+                        Text(String(format: NSLocalizedString("expiration_date", comment: ""), dateFormatter.string(from: food.expirationDate)))
                     }
                     .foregroundColor(.secondary)
                     
                     HStack {
                         Image(systemName: "clock")
-                        Text("剩余天数：")
-                        Text("\(food.daysRemaining) 天")
+                        Text(NSLocalizedString("days_remaining", comment: ""))
+                        Text(String(format: NSLocalizedString("days_count", comment: ""), food.daysRemaining))
                             .foregroundColor(food.daysRemaining <= 3 ? .red : .primary)
                             .fontWeight(.bold)
                     }
                     
                     if food.daysRemaining <= 3 {
-                        Text("请尽快食用！")
+                        Text(NSLocalizedString("please_consume_soon", comment: ""))
                             .foregroundColor(.red)
                             .fontWeight(.medium)
                             .padding(.top, 4)
@@ -182,7 +182,7 @@ struct ExpirationPopupView: View {
                         }) {
                             HStack {
                                 Image(systemName: "wand.and.stars")
-                                Text(isLoadingRecommendations ? "生成菜品中..." : "给我菜品推荐")
+                                Text(isLoadingRecommendations ? NSLocalizedString("generating_dishes", comment: "") : NSLocalizedString("give_me_dishes_recommendation", comment: ""))
                             }
                             .font(.subheadline)
                             .fontWeight(.medium)
@@ -199,7 +199,7 @@ struct ExpirationPopupView: View {
                     // 推荐的菜品
                     if showRecommendations {
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("推荐菜品")
+                            Text(NSLocalizedString("recommended_dishes", comment: ""))
                                 .font(.headline)
                                 .padding(.top, 10)
                             
@@ -234,7 +234,7 @@ struct ExpirationPopupView: View {
                 }
                 .padding(.horizontal)
             } else {
-                Text("你的冰箱空空如也，没有任何食材。")
+                Text(NSLocalizedString("your_refrigerator_is_empty", comment: ""))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .padding(.horizontal)
@@ -246,7 +246,7 @@ struct ExpirationPopupView: View {
                     isShowing = false
                 }
             }) {
-                Text("知道了")
+                Text(NSLocalizedString("confirm", comment: ""))
                     .fontWeight(.medium)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)

@@ -21,25 +21,25 @@ struct AddFoodView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("基本信息")) {
-                    TextField("食物名称", text: $name)
+                Section(header: Text(NSLocalizedString("section_basic_info", comment: ""))) {
+                    TextField(NSLocalizedString("food_name", comment: ""), text: $name)
                     
-                    DatePicker("过期日期", selection: $expirationDate, displayedComponents: [.date])
+                    DatePicker(NSLocalizedString("expiration_date", comment: ""), selection: $expirationDate, displayedComponents: [.date])
                 }
                 
-                Section(header: Text("分类")) {
-                    Picker("选择分类", selection: $category) {
+                Section(header: Text(NSLocalizedString("section_category", comment: ""))) {
+                    Picker(NSLocalizedString("select_category", comment: ""), selection: $category) {
                         ForEach(Category.allCases, id: \.self) { category in
                             HStack {
                                 Image(systemName: category.iconName)
-                                Text(category.rawValue)
+                                Text(category.displayName)
                             }
                             .tag(category)
                         }
                     }
                 }
                 
-                Section(header: Text("标签")) {
+                Section(header: Text(NSLocalizedString("section_tags", comment: ""))) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             ForEach(Tag.allCases, id: \.self) { tag in
@@ -56,22 +56,22 @@ struct AddFoodView: View {
                     }
                 }
                 
-                Section(header: Text("备注")) {
+                Section(header: Text(NSLocalizedString("section_notes", comment: ""))) {
                     TextEditor(text: $notes)
                         .frame(minHeight: 100)
                 }
             }
-            .navigationTitle("添加食物")
+            .navigationTitle(NSLocalizedString("nav_title_add_food", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") {
+                    Button(NSLocalizedString("save", comment: "")) {
                         saveFood()
                     }
                     .disabled(name.isEmpty)

@@ -61,16 +61,31 @@ extension Models {
     }
 
     enum Category: String, Codable, CaseIterable {
-        case vegetable = "蔬菜"
-        case fruit = "水果"
-        case meat = "肉类"
-        case seafood = "海鲜"
-        case dairy = "乳制品"
-        case grain = "谷物"
-        case condiment = "调味品"
-        case beverage = "饮料"
-        case snack = "零食"
-        case other = "其他"
+        case vegetable = "vegetable"
+        case fruit = "fruit"
+        case meat = "meat"
+        case seafood = "seafood"
+        case dairy = "dairy"
+        case grain = "grain"
+        case condiment = "condiment"
+        case beverage = "beverage"
+        case snack = "snack"
+        case other = "other"
+        
+        var displayName: String {
+            switch self {
+            case .vegetable: return NSLocalizedString("category_vegetable", comment: "")
+            case .fruit: return NSLocalizedString("category_fruit", comment: "")
+            case .meat: return NSLocalizedString("category_meat", comment: "")
+            case .seafood: return NSLocalizedString("category_seafood", comment: "")
+            case .dairy: return NSLocalizedString("category_dairy", comment: "")
+            case .grain: return NSLocalizedString("category_grain", comment: "")
+            case .condiment: return NSLocalizedString("category_condiment", comment: "")
+            case .beverage: return NSLocalizedString("category_beverage", comment: "")
+            case .snack: return NSLocalizedString("category_snack", comment: "")
+            case .other: return NSLocalizedString("category_other", comment: "")
+            }
+        }
         
         var iconName: String {
             switch self {
@@ -89,11 +104,21 @@ extension Models {
     }
 
     enum Tag: String, Codable, CaseIterable {
-        case refrigerated = "需冷藏"
-        case frozen = "冷冻"
-        case roomTemperature = "常温"
-        case favorite = "常用"
-        case leftover = "剩菜"
+        case refrigerated = "refrigerated"
+        case frozen = "frozen"
+        case roomTemperature = "roomTemperature"
+        case favorite = "favorite"
+        case leftover = "leftover"
+        
+        var displayName: String {
+            switch self {
+            case .refrigerated: return NSLocalizedString("tag_refrigerated", comment: "")
+            case .frozen: return NSLocalizedString("tag_frozen", comment: "")
+            case .roomTemperature: return NSLocalizedString("tag_room_temperature", comment: "")
+            case .favorite: return NSLocalizedString("tag_favorite", comment: "")
+            case .leftover: return NSLocalizedString("tag_leftover", comment: "")
+            }
+        }
         
         var iconName: String {
             switch self {
@@ -155,8 +180,15 @@ extension Models {
 
     // 食物处理方式
     enum FoodDisposalType: String, Codable {
-        case consumed = "已消耗"  // 正常消耗
-        case wasted = "已浪费"    // 扔掉/浪费
+        case consumed = "consumed"
+        case wasted = "wasted"
+        
+        var displayName: String {
+            switch self {
+            case .consumed: return NSLocalizedString("status_consumed", comment: "")
+            case .wasted: return NSLocalizedString("status_wasted", comment: "")
+            }
+        }
     }
     
     // 食物历史记录条目
@@ -180,26 +212,26 @@ extension Models {
 extension Models.FoodItem {
     static let sampleItems: [FoodItem] = [
         FoodItem(
-            name: "牛奶",
+            name: NSLocalizedString("sample_food_milk", comment: ""),
             expirationDate: Calendar.current.date(byAdding: .day, value: 5, to: Date())!,
             category: .dairy,
             tags: [.refrigerated],
             addedDate: Date()
         ),
         FoodItem(
-            name: "苹果",
+            name: NSLocalizedString("sample_food_apple", comment: ""),
             expirationDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())!,
             category: .fruit,
             tags: [.refrigerated],
             addedDate: Date()
         ),
         FoodItem(
-            name: "鸡肉",
+            name: NSLocalizedString("sample_food_chicken", comment: ""),
             expirationDate: Calendar.current.date(byAdding: .day, value: 2, to: Date())!,
             category: .meat,
             tags: [.frozen],
             addedDate: Date(),
-            notes: "周末烧烤用"
+            notes: NSLocalizedString("sample_food_note", comment: "")
         )
     ]
 }
@@ -219,9 +251,9 @@ extension Services {
                     print("ERROR: 通知权限请求失败: \(error.localizedDescription)")
                 }
                 if success {
-                    print("通知权限获取成功")
+                    print(NSLocalizedString("notification_permission_success", comment: ""))
                 } else {
-                    print("通知权限获取失败")
+                    print(NSLocalizedString("notification_permission_failed", comment: ""))
                 }
             }
         }
@@ -248,22 +280,22 @@ extension Services {
             
             // 创建请求
             let request = UNNotificationRequest(
-                identifier: item.id.uuidString,
+                identifier: "food-expiration-\(item.id)",
                 content: content,
                 trigger: trigger
             )
             
-            // 添加通知请求
+            // 添加通知
             UNUserNotificationCenter.current().add(request) { error in
                 if let error = error {
-                    print("ERROR: 无法安排通知: \(error.localizedDescription)")
+                    print("ERROR: 添加通知失败: \(error.localizedDescription)")
                 }
             }
         }
         
         // 取消食品的通知
         func cancelNotification(for item: FoodItem) {
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [item.id.uuidString])
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["food-expiration-\(item.id)"])
         }
         
         // 取消所有通知

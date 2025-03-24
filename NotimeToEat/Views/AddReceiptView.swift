@@ -35,7 +35,7 @@ struct AddReceiptView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("购物小票图片")) {
+                Section(header: Text(NSLocalizedString("shopping_receipt_image", comment: ""))) {
                     #if os(iOS)
                     VStack {
                         if let imageData = receiptImageData, let uiImage = UIImage(data: imageData) {
@@ -48,7 +48,7 @@ struct AddReceiptView: View {
                             Button(action: {
                                 self.receiptImageData = nil
                             }) {
-                                Label("删除图片", systemImage: "trash")
+                                Label(NSLocalizedString("delete_image", comment: ""), systemImage: "trash")
                                     .foregroundColor(.red)
                             }
                             .padding(.top, 8)
@@ -56,7 +56,7 @@ struct AddReceiptView: View {
                             Button(action: {
                                 showingActionSheet = true
                             }) {
-                                Label("添加小票图片", systemImage: "camera")
+                                Label(NSLocalizedString("add_receipt_image", comment: ""), systemImage: "camera")
                                     .font(.headline)
                                     .padding()
                                     .frame(maxWidth: .infinity)
@@ -66,16 +66,16 @@ struct AddReceiptView: View {
                             }
                             .actionSheet(isPresented: $showingActionSheet) {
                                 ActionSheet(
-                                    title: Text("添加小票"),
-                                    message: Text("请选择添加方式"),
+                                    title: Text(NSLocalizedString("add_receipt", comment: "")),
+                                    message: Text(NSLocalizedString("select_add_method", comment: "")),
                                     buttons: [
-                                        .default(Text("拍照")) {
+                                        .default(Text(NSLocalizedString("take_photo", comment: ""))) {
                                             showingCamera = true
                                         },
-                                        .default(Text("从相册选择")) {
+                                        .default(Text(NSLocalizedString("choose_from_library", comment: ""))) {
                                             showingPhotoLibrary = true
                                         },
-                                        .cancel(Text("取消"))
+                                        .cancel(Text(NSLocalizedString("cancel", comment: "")))
                                     ]
                                 )
                             }
@@ -97,14 +97,14 @@ struct AddReceiptView: View {
                     #endif
                 }
                 
-                Section(header: Text("处理选项")) {
-                    Toggle("OCR文本识别", isOn: $enableOCR)
+                Section(header: Text(NSLocalizedString("processing_options", comment: ""))) {
+                    Toggle(NSLocalizedString("ocr_recognition", comment: ""), isOn: $enableOCR)
                     
-                    Toggle("AI智能分析", isOn: $useAIAnalysis)
+                    Toggle(NSLocalizedString("ai_analysis", comment: ""), isOn: $useAIAnalysis)
                         .disabled(!enableOCR)
                     
                     if !enableOCR && useAIAnalysis {
-                        Text("AI分析需要先启用OCR")
+                        Text(NSLocalizedString("ai_analysis_requires_ocr", comment: ""))
                             .font(.caption)
                             .foregroundColor(.orange)
                     }
@@ -116,7 +116,7 @@ struct AddReceiptView: View {
                             saveReceipt()
                         }) {
                             HStack {
-                                Text(useAIAnalysis ? "保存并分析小票" : "保存小票")
+                                Text(useAIAnalysis ? NSLocalizedString("save_and_analyze_receipt", comment: "") : NSLocalizedString("save_receipt", comment: ""))
                                 
                                 if isProcessingOCR || isProcessingAI {
                                     Spacer()
@@ -134,7 +134,7 @@ struct AddReceiptView: View {
                 }
                 
                 if isReceiptSaved && useAIAnalysis && !aiAnalysisResult.isEmpty {
-                    Section(header: Text("AI分析结果")) {
+                    Section(header: Text(NSLocalizedString("ai_analysis_results", comment: ""))) {
                         Text(aiAnalysisResult)
                             .font(.body)
                             .padding(.vertical, 4)
@@ -142,7 +142,7 @@ struct AddReceiptView: View {
                         Button(action: {
                             showingFoodSelection = true
                         }) {
-                            Text("选择要添加的食品")
+                            Text(NSLocalizedString("select_food_to_add", comment: ""))
                                 .frame(maxWidth: .infinity)
                                 .foregroundColor(.white)
                                 .padding()
@@ -167,7 +167,7 @@ struct AddReceiptView: View {
                             Spacer()
                             VStack(spacing: 12) {
                                 ProgressView()
-                                Text("AI分析中...")
+                                Text(NSLocalizedString("ai_analysis_in_progress", comment: ""))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -180,7 +180,7 @@ struct AddReceiptView: View {
                         Button(action: {
                             dismiss()
                         }) {
-                            Text("完成")
+                            Text(NSLocalizedString("done", comment: ""))
                                 .frame(maxWidth: .infinity)
                                 .foregroundColor(.white)
                                 .padding()
@@ -190,11 +190,11 @@ struct AddReceiptView: View {
                     }
                 }
             }
-            .navigationTitle("添加小票")
+            .navigationTitle(NSLocalizedString("add_receipt", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                 }

@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  NotimeToEat
+  
+  简体中文本地化 Info.plist
+*/
+
+// 权限描述
+"NSCameraUsageDescription" = "需要使用相机来拍摄小票照片";
+"NSPhotoLibraryUsageDescription" = "需要访问相册来选择小票照片"; 

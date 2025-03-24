@@ -23,7 +23,7 @@ struct ShoppingListView: View {
         NavigationView {
             List {
                 if !shoppingListStore.unpurchasedItems.isEmpty {
-                    Section(header: Text("待购买")) {
+                    Section(header: Text(NSLocalizedString("shopping_unpurchased", comment: ""))) {
                         ForEach(shoppingListStore.unpurchasedItems) { item in
                             ShoppingItemRow(item: item)
                         }
@@ -34,7 +34,7 @@ struct ShoppingListView: View {
                 }
                 
                 if !shoppingListStore.purchasedItems.isEmpty {
-                    Section(header: Text("已购买")) {
+                    Section(header: Text(NSLocalizedString("shopping_purchased", comment: ""))) {
                         ForEach(shoppingListStore.purchasedItems) { item in
                             ShoppingItemRow(item: item)
                         }
@@ -46,16 +46,16 @@ struct ShoppingListView: View {
                 
                 if shoppingListStore.shoppingItems.isEmpty {
                     ContentUnavailableView(
-                        "购物清单为空",
+                        NSLocalizedString("shopping_list_empty", comment: ""),
                         systemImage: "cart",
-                        description: Text("右滑食物项并选择「添加到购物清单」来添加商品")
+                        description: Text(NSLocalizedString("shopping_list_add_hint", comment: ""))
                     )
                     .padding(.top, 50)
                 }
             }
             .listStyle(InsetGroupedListStyle())
-            .navigationTitle("购买清单")
-            .searchable(text: $searchText, prompt: "搜索商品")
+            .navigationTitle(NSLocalizedString("tab_shopping_list", comment: ""))
+            .searchable(text: $searchText, prompt: NSLocalizedString("search_items", comment: ""))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
@@ -98,7 +98,7 @@ struct ShoppingItemRow: View {
                     HStack {
                         Image(systemName: item.category.iconName)
                             .foregroundColor(.secondary)
-                        Text(item.category.rawValue)
+                        Text(item.category.displayName)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -144,36 +144,36 @@ struct AddShoppingItemView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("基本信息")) {
-                    TextField("商品名称", text: $name)
+                Section(header: Text(NSLocalizedString("section_basic_info", comment: ""))) {
+                    TextField(NSLocalizedString("item_name", comment: ""), text: $name)
                     
-                    Picker("选择分类", selection: $category) {
+                    Picker(NSLocalizedString("select_category", comment: ""), selection: $category) {
                         ForEach(Category.allCases, id: \.self) { category in
                             HStack {
                                 Image(systemName: category.iconName)
-                                Text(category.rawValue)
+                                Text(category.displayName)
                             }
                             .tag(category)
                         }
                     }
                 }
                 
-                Section(header: Text("备注")) {
+                Section(header: Text(NSLocalizedString("section_notes", comment: ""))) {
                     TextEditor(text: $notes)
                         .frame(minHeight: 100)
                 }
             }
-            .navigationTitle("添加商品")
+            .navigationTitle(NSLocalizedString("nav_title_add_item", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") {
+                    Button(NSLocalizedString("save", comment: "")) {
                         saveItem()
                     }
                     .disabled(name.isEmpty)
@@ -218,23 +218,23 @@ struct EditShoppingItemView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("基本信息")) {
-                    TextField("商品名称", text: $name)
+                Section(header: Text(NSLocalizedString("section_basic_info", comment: ""))) {
+                    TextField(NSLocalizedString("item_name", comment: ""), text: $name)
                     
-                    Picker("选择分类", selection: $category) {
+                    Picker(NSLocalizedString("select_category", comment: ""), selection: $category) {
                         ForEach(Category.allCases, id: \.self) { category in
                             HStack {
                                 Image(systemName: category.iconName)
-                                Text(category.rawValue)
+                                Text(category.displayName)
                             }
                             .tag(category)
                         }
                     }
                     
-                    Toggle("已购买", isOn: $isPurchased)
+                    Toggle(NSLocalizedString("purchased", comment: ""), isOn: $isPurchased)
                 }
                 
-                Section(header: Text("备注")) {
+                Section(header: Text(NSLocalizedString("section_notes", comment: ""))) {
                     TextEditor(text: $notes)
                         .frame(minHeight: 100)
                 }
@@ -246,23 +246,23 @@ struct EditShoppingItemView: View {
                     }) {
                         HStack {
                             Spacer()
-                            Text("删除商品")
+                            Text(NSLocalizedString("delete_item", comment: ""))
                             Spacer()
                         }
                     }
                 }
             }
-            .navigationTitle("编辑商品")
+            .navigationTitle(NSLocalizedString("nav_title_edit_item", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") {
+                    Button(NSLocalizedString("save", comment: "")) {
                         saveItem()
                     }
                     .disabled(name.isEmpty)

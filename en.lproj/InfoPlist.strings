@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  NotimeToEat
+  
+  English Localization for Info.plist
+*/
+
+// Permission descriptions
+"NSCameraUsageDescription" = "Camera access is needed to take photos of receipts";
+"NSPhotoLibraryUsageDescription" = "Photo library access is needed to select receipt photos"; 

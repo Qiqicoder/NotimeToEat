@@ -17,31 +17,31 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             FoodListView()
                 .tabItem {
-                    Label("食物列表", systemImage: "refrigerator")
+                    Label(NSLocalizedString("tab_food_list", comment: ""), systemImage: "refrigerator")
                 }
                 .tag(0)
             
             CategoryView()
                 .tabItem {
-                    Label("分类", systemImage: "list.bullet")
+                    Label(NSLocalizedString("tab_categories", comment: ""), systemImage: "list.bullet")
                 }
                 .tag(1)
             
             ShoppingListView()
                 .tabItem {
-                    Label("购买清单", systemImage: "cart")
+                    Label(NSLocalizedString("tab_shopping_list", comment: ""), systemImage: "cart")
                 }
                 .tag(2)
             
             ReceiptListView()
                 .tabItem {
-                    Label("小票", systemImage: "doc.text.image")
+                    Label(NSLocalizedString("tab_receipts", comment: ""), systemImage: "doc.text.image")
                 }
                 .tag(3)
             
             SettingsView()
                 .tabItem {
-                    Label("设置", systemImage: "gear")
+                    Label(NSLocalizedString("tab_settings", comment: ""), systemImage: "gear")
                 }
                 .tag(4)
         }
@@ -73,7 +73,7 @@ struct CategoryView: View {
                     }
                 }
             }
-            .navigationTitle("食物分类")
+            .navigationTitle(NSLocalizedString("nav_title_food_categories", comment: ""))
         }
     }
 }
@@ -91,20 +91,20 @@ struct CategoryDetailView: View {
                         Button(role: .destructive) {
                             foodStore.deleteFood(item)
                         } label: {
-                            Label("删除", systemImage: "trash")
+                            Label(NSLocalizedString("delete_simply", comment: ""), systemImage: "trash")
                         }
                         
                         Button {
                             foodStore.deleteFood(item)
                             shoppingListStore.addFromFood(item)
                         } label: {
-                            Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
+                            Label(NSLocalizedString("delete_add_to_shopping_list", comment: ""), systemImage: "cart.badge.plus")
                         }
                         .tint(.green)
                     }
             }
         }
-        .navigationTitle(category.rawValue)
+        .navigationTitle(category.displayName)
     }
 }
 
@@ -119,7 +119,7 @@ struct SettingsView: View {
         NavigationView {
             Form {
                 // 账户部分
-                Section(header: Text("账户")) {
+                Section(header: Text(NSLocalizedString("section_account", comment: ""))) {
                     Button(action: {
                         showingUserAccountView = true
                     }) {
@@ -150,9 +150,9 @@ struct SettingsView: View {
                                 }
                                 
                                 VStack(alignment: .leading) {
-                                    Text(authService.currentUser.displayName ?? "未知用户")
+                                    Text(authService.currentUser.displayName ?? NSLocalizedString("unknown_user", comment: ""))
                                         .font(.headline)
-                                    Text("已登录")
+                                    Text(NSLocalizedString("logged_in", comment: ""))
                                         .font(.caption)
                                         .foregroundColor(.green)
                                 }
@@ -164,9 +164,9 @@ struct SettingsView: View {
                                     .foregroundColor(.gray)
                                 
                                 VStack(alignment: .leading) {
-                                    Text("点击登录")
+                                    Text(NSLocalizedString("click_to_login", comment: ""))
                                         .font(.headline)
-                                    Text("同步您的数据")
+                                    Text(NSLocalizedString("sync_data", comment: ""))
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -181,45 +181,45 @@ struct SettingsView: View {
                     .foregroundColor(.primary)
                 }
                 
-                Section(header: Text("数据统计")) {
+                Section(header: Text(NSLocalizedString("section_statistics", comment: ""))) {
                     NavigationLink(destination: HistoryView()) {
                         HStack {
                             Image(systemName: "chart.pie")
                                 .foregroundColor(.blue)
-                            Text("食物历史统计")
+                            Text(NSLocalizedString("food_history_stats", comment: ""))
                         }
                     }
-                    Text("查看食物消耗和浪费的统计数据")
+                    Text(NSLocalizedString("view_consumption_stats", comment: ""))
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
                 
-                Section(header: Text("通知设置")) {
-                    Stepper("提前 \(notificationHours) 小时通知", value: $notificationHours, in: 1...72)
-                    Text("食物过期前将提前\(notificationHours)小时通知您")
+                Section(header: Text(NSLocalizedString("section_notification_settings", comment: ""))) {
+                    Stepper(String(format: NSLocalizedString("notify_hours_before", comment: ""), notificationHours), value: $notificationHours, in: 1...72)
+                    Text(String(format: NSLocalizedString("expiration_notification_description", comment: ""), notificationHours))
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
                 
-                Section(header: Text("存储管理")) {
+                Section(header: Text(NSLocalizedString("section_storage_management", comment: ""))) {
                     Button(role: .destructive, action: {
                         foodStore.foodItems.removeAll()
                         foodStore.save()
                         NotificationManager.shared.cancelAllNotifications()
                     }) {
-                        Text("清空所有食物")
+                        Text(NSLocalizedString("clear_all_food", comment: ""))
                     }
                 }
                 
-                Section(header: Text("关于")) {
-                    Text("冰箱里的东西该吃了！")
+                Section(header: Text(NSLocalizedString("section_about", comment: ""))) {
+                    Text(NSLocalizedString("app_slogan", comment: ""))
                         .font(.headline)
                         .bold()
-                    Text("版本: 1.0.0")
-                    Text("此应用帮助您管理冰箱中的食物，避免浪费")
+                    Text("Ver: 1.0.0")
+                    Text(NSLocalizedString("app_description", comment: ""))
                 }
             }
-            .navigationTitle("设置")
+            .navigationTitle(NSLocalizedString("nav_title_settings", comment: ""))
             .sheet(isPresented: $showingUserAccountView) {
                 UserAccountView()
                     .environmentObject(authService)

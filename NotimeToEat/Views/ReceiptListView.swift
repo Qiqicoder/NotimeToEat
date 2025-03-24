@@ -26,16 +26,16 @@ struct ReceiptListView: View {
                     
                     if receiptManager.receipts.isEmpty {
                         ContentUnavailableView(
-                            "暂无购物小票",
+                            NSLocalizedString("no_receipts", comment: ""),
                             systemImage: "doc.text.image",
-                            description: Text("点击右上角添加按钮上传小票")
+                            description: Text(NSLocalizedString("add_receipt_description", comment: ""))
                         )
                         .padding(.top, 100)
                     }
                 }
                 .padding()
             }
-            .navigationTitle("购物小票")
+            .navigationTitle(NSLocalizedString("receipts", comment: ""))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
@@ -48,16 +48,16 @@ struct ReceiptListView: View {
             }
             .actionSheet(isPresented: $showingActionSheet) {
                 ActionSheet(
-                    title: Text("添加小票"),
-                    message: Text("请选择添加方式"),
+                    title: Text(NSLocalizedString("add_receipt", comment: "")),
+                    message: Text(NSLocalizedString("select_add_method", comment: "")),
                     buttons: [
-                        .default(Text("拍照")) {
+                        .default(Text(NSLocalizedString("take_photo", comment: ""))) {
                             showingCamera = true
                         },
-                        .default(Text("从相册选择")) {
+                        .default(Text(NSLocalizedString("choose_from_library", comment: ""))) {
                             showingPhotoLibrary = true
                         },
-                        .cancel(Text("取消"))
+                        .cancel(Text(NSLocalizedString("cancel", comment: "")))
                     ]
                 )
             }
@@ -91,21 +91,21 @@ struct ReceiptListView: View {
                 }
             }
             .confirmationDialog(
-                "确定要删除这张小票吗？",
+                NSLocalizedString("delete_receipt_confirmation", comment: ""),
                 isPresented: $showingDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("删除", role: .destructive) {
+                Button(NSLocalizedString("delete", comment: ""), role: .destructive) {
                     if let receipt = receiptToDelete {
                         receiptManager.deleteReceipt(receipt)
                         receiptToDelete = nil
                     }
                 }
-                Button("取消", role: .cancel) {
+                Button(NSLocalizedString("cancel", comment: ""), role: .cancel) {
                     receiptToDelete = nil
                 }
             } message: {
-                Text("此操作不可撤销")
+                Text(NSLocalizedString("action_cannot_be_undone", comment: ""))
             }
         }
     }
@@ -136,11 +136,11 @@ struct ReceiptCard: View {
                         .font(.headline)
                     
                     if let associatedFoods = foodsForReceipt, !associatedFoods.isEmpty {
-                        Text("关联食品：\(associatedFoods.count)项")
+                        Text(String(format: NSLocalizedString("associated_foods_count", comment: ""), associatedFoods.count))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     } else {
-                        Text("暂无关联食品")
+                        Text(NSLocalizedString("no_related_food", comment: ""))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -244,7 +244,7 @@ struct ReceiptCard: View {
                     label: {
                         HStack {
                             Image(systemName: "text.viewfinder")
-                            Text("OCR识别文本")
+                            Text(NSLocalizedString("ocr_recognition", comment: ""))
                                 .font(.subheadline)
                                 .bold()
                         }
@@ -267,7 +267,7 @@ struct ReceiptCard: View {
                     label: {
                         HStack {
                             Image(systemName: "brain")
-                            Text("AI分析结果")
+                            Text(NSLocalizedString("ai_analysis", comment: ""))
                                 .font(.subheadline)
                                 .bold()
                                 .foregroundColor(.blue)
@@ -346,15 +346,15 @@ struct FoodPickerView: View {
                 }
                 
                 if foodStore.foodItems.isEmpty {
-                    Text("暂无食品，请先添加食品")
+                    Text(NSLocalizedString("no_food_to_select", comment: ""))
                         .foregroundColor(.gray)
                         .padding()
                 }
             }
-            .navigationTitle("选择关联食品")
+            .navigationTitle(NSLocalizedString("select_related_food", comment: ""))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(NSLocalizedString("done", comment: "")) {
                         dismiss()
                     }
                 }

@@ -1,12 +1,17 @@
 import SwiftUI
+// Add this line to explicitly import the Edge type
+extension Edge {
+    // This is just to make the Edge type visible for swipeActions
+}
+
 // 导入Globals.swift中定义的类型和管理器
 
 // 定义排序选项
 enum SortOption: String, CaseIterable, Identifiable {
-    case nameAsc = "按名称 (A-Z)"
-    case nameDesc = "按名称 (Z-A)"
-    case expirationAsc = "按过期日期 (最近)"
-    case expirationDesc = "按过期日期 (最远)"
+    case nameAsc = "alpha_asc"
+    case nameDesc = "alpha_desc"
+    case expirationAsc = "date_recent"
+    case expirationDesc = "date_old"
     
     var id: String { self.rawValue }
 }
@@ -48,198 +53,8 @@ struct FoodListView: View {
     
     var body: some View {
         ZStack {
-            NavigationView {
-                List {
-                    if !foodStore.expiringSoonItems.isEmpty {
-                        Section(header: Text("即将过期")) {
-                            ForEach(sortItems(foodStore.expiringSoonItems)) { item in
-                                FoodItemRow(item: item)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        Button(role: .destructive) {
-                                            selectedFoodItem = item
-                                            showingDisposalOptions = true
-                                        } label: {
-                                            Label("处理", systemImage: "archivebox")
-                                        }
-                                        
-                                        Button {
-                                            foodStore.deleteFood(item)
-                                            shoppingListStore.addFromFood(item)
-                                        } label: {
-                                            Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
-                                        }
-                                        .tint(.green)
-                                    }
-                            }
-                        }
-                    }
-                    
-                    if !foodStore.expiredItems.isEmpty {
-                        Section(header: Text("已过期")) {
-                            ForEach(sortItems(foodStore.expiredItems)) { item in
-                                FoodItemRow(item: item)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        Button(role: .destructive) {
-                                            selectedFoodItem = item
-                                            showingDisposalOptions = true
-                                        } label: {
-                                            Label("处理", systemImage: "archivebox")
-                                        }
-                                        
-                                        Button {
-                                            foodStore.deleteFood(item)
-                                            shoppingListStore.addFromFood(item)
-                                        } label: {
-                                            Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
-                                        }
-                                        .tint(.green)
-                                    }
-                            }
-                        }
-                    }
-                    
-                    Section(header: Text("所有食物")) {
-                        ForEach(filteredItems) { item in
-                            FoodItemRow(item: item)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button(role: .destructive) {
-                                        selectedFoodItem = item
-                                        showingDisposalOptions = true
-                                    } label: {
-                                        Label("处理", systemImage: "archivebox")
-                                    }
-                                    
-                                    Button {
-                                        foodStore.deleteFood(item)
-                                        shoppingListStore.addFromFood(item)
-                                    } label: {
-                                        Label("删除并添加到购物清单", systemImage: "cart.badge.plus")
-                                    }
-                                    .tint(.green)
-                                }
-                        }
-                    }
-                }
-                .listStyle(InsetGroupedListStyle())
-                .navigationTitle("冰箱里的东西该吃了！")
-                .searchable(text: $searchText, prompt: "搜索食物")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Menu {
-                            Picker("排序方式", selection: $selectedSortOption) {
-                                ForEach(SortOption.allCases) { option in
-                                    Text(option.rawValue).tag(option)
-                                }
-                            }
-                        } label: {
-                            Label("排序", systemImage: "arrow.up.arrow.down")
-                        }
-                    }
-                }
-                .sheet(isPresented: $showingAddFood) {
-                    AddFoodView()
-                }
-                .sheet(isPresented: $showingAddReceipt) {
-                    AddReceiptView()
-                }
-                .confirmationDialog("如何处理食物？", isPresented: $showingDisposalOptions, titleVisibility: .visible) {
-                    Button("已消耗") {
-                        if let item = selectedFoodItem {
-                            foodStore.disposeFoodItem(item, disposalType: .consumed, historyStore: foodHistoryStore)
-                        }
-                    }
-                    Button("已浪费", role: .destructive) {
-                        if let item = selectedFoodItem {
-                            foodStore.disposeFoodItem(item, disposalType: .wasted, historyStore: foodHistoryStore)
-                        }
-                    }
-                    Button("取消", role: .cancel) {
-                        selectedFoodItem = nil
-                    }
-                } message: {
-                    if let item = selectedFoodItem {
-                        Text("请选择如何处理\"\(item.name)\"")
-                    } else {
-                        Text("请选择处理方式")
-                    }
-                }
-            }
-            
-            // 右下角浮动的功能按钮组
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    
-                    // 展开后的两个选项按钮
-                    if isAddButtonExpanded {
-                        // 添加食物按钮
-                        Button(action: {
-                            showingAddFood = true
-                            isAddButtonExpanded = false
-                        }) {
-                            HStack {
-                                Text("添加食物")
-                                    .font(.footnote)
-                                    .fontWeight(.semibold)
-                                
-                                Image(systemName: "carrot")
-                                    .font(.footnote)
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.green)
-                            .clipShape(Capsule())
-                            .shadow(radius: 2)
-                        }
-                        .transition(.scale.combined(with: .opacity))
-                        .padding(.trailing, 8)
-                        
-                        // 添加小票按钮
-                        Button(action: {
-                            showingAddReceipt = true
-                            isAddButtonExpanded = false
-                        }) {
-                            HStack {
-                                Text("添加小票")
-                                    .font(.footnote)
-                                    .fontWeight(.semibold)
-                                
-                                Image(systemName: "doc.text.image")
-                                    .font(.footnote)
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.blue)
-                            .clipShape(Capsule())
-                            .shadow(radius: 2)
-                        }
-                        .transition(.scale.combined(with: .opacity))
-                        .padding(.trailing, 8)
-                    }
-                    
-                    // 主添加按钮
-                    Button(action: {
-                        withAnimation(.spring()) {
-                            isAddButtonExpanded.toggle()
-                        }
-                    }) {
-                        Image(systemName: isAddButtonExpanded ? "xmark" : "plus")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
-                            .background(isAddButtonExpanded ? Color.red : Color.blue)
-                            .clipShape(Circle())
-                            .shadow(radius: 4)
-                            .rotationEffect(.degrees(isAddButtonExpanded ? 90 : 0))
-                            .animation(.spring(), value: isAddButtonExpanded)
-                    }
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 30)
-                }
-            }
+            NavigationViewContent()
+            FloatingAddButtons()
         }
         .onChange(of: showingAddFood) { newValue in
             // 确保当表单关闭时，展开状态也被重置
@@ -253,6 +68,236 @@ struct FoodListView: View {
                 isAddButtonExpanded = false
             }
         }
+    }
+    
+    // MARK: - Extracted Components
+    
+    @ViewBuilder
+    private func NavigationViewContent() -> some View {
+        NavigationView {
+            FoodListContent()
+                .listStyle(InsetGroupedListStyle())
+                .navigationTitle(NSLocalizedString("app_name", comment: ""))
+                .searchable(text: $searchText, prompt: NSLocalizedString("search_food", comment: ""))
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            Picker(NSLocalizedString("sort_option", comment: ""), selection: $selectedSortOption) {
+                                ForEach(SortOption.allCases) { option in
+                                    Text(NSLocalizedString(option.rawValue, comment: "")).tag(option)
+                                }
+                            }
+                        } label: {
+                            Label(NSLocalizedString("sort_option", comment: ""), systemImage: "arrow.up.arrow.down")
+                        }
+                    }
+                }
+                .sheet(isPresented: $showingAddFood) {
+                    AddFoodView()
+                }
+                .sheet(isPresented: $showingAddReceipt) {
+                    AddReceiptView()
+                }
+                .confirmationDialog(
+                    NSLocalizedString("how_to_dispose_food", comment: ""),
+                    isPresented: $showingDisposalOptions,
+                    titleVisibility: .visible,
+                    actions: { DisposalDialogButtons() },
+                    message: { DisposalDialogMessage() }
+                )
+        }
+    }
+    
+    @ViewBuilder
+    private func FoodListContent() -> some View {
+        List {
+            // Expiring Soon Section
+            if !foodStore.expiringSoonItems.isEmpty {
+                ExpiringSoonSection()
+            }
+            
+            // Expired Section
+            if !foodStore.expiredItems.isEmpty {
+                ExpiredSection()
+            }
+            
+            // All Food Section
+            AllFoodSection()
+        }
+    }
+    
+    @ViewBuilder
+    private func ExpiringSoonSection() -> some View {
+        Section(header: Text(NSLocalizedString("expiring_soon", comment: ""))) {
+            ForEach(sortItems(foodStore.expiringSoonItems)) { item in
+                FoodItemRow(item: item)
+                    .swipeActions(allowsFullSwipe: false) {
+                        SwipeActionButtons(for: item)
+                    }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func ExpiredSection() -> some View {
+        Section(header: Text(NSLocalizedString("expired_food", comment: ""))) {
+            ForEach(sortItems(foodStore.expiredItems)) { item in
+                FoodItemRow(item: item)
+                    .swipeActions(allowsFullSwipe: false) {
+                        SwipeActionButtons(for: item)
+                    }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func AllFoodSection() -> some View {
+        Section(header: Text(NSLocalizedString("ALL_FOOD", comment: ""))) {
+            ForEach(filteredItems) { item in
+                FoodItemRow(item: item)
+                    .swipeActions(allowsFullSwipe: false) {
+                        SwipeActionButtons(for: item)
+                    }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func SwipeActionButtons(for item: FoodItem) -> some View {
+        Group {
+            Button(role: .destructive) {
+                selectedFoodItem = item
+                showingDisposalOptions = true
+            } label: {
+                Label(NSLocalizedString("dispose", comment: ""), systemImage: "archivebox")
+            }
+            
+            Button {
+                foodStore.deleteFood(item)
+                shoppingListStore.addFromFood(item)
+            } label: {
+                Label(NSLocalizedString("delete_add_to_shopping_list", comment: ""), systemImage: "cart.badge.plus")
+            }
+            .tint(.green)
+        }
+    }
+    
+    @ViewBuilder
+    private func DisposalDialogButtons() -> some View {
+        Group {
+            Button(NSLocalizedString("consumed", comment: "")) {
+                if let item = selectedFoodItem {
+                    foodStore.disposeFoodItem(item, disposalType: .consumed, historyStore: foodHistoryStore)
+                }
+            }
+            Button(NSLocalizedString("wasted", comment: ""), role: .destructive) {
+                if let item = selectedFoodItem {
+                    foodStore.disposeFoodItem(item, disposalType: .wasted, historyStore: foodHistoryStore)
+                }
+            }
+            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) {
+                selectedFoodItem = nil
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func DisposalDialogMessage() -> some View {
+        if let item = selectedFoodItem {
+            Text(NSLocalizedString("please_select_how_to_dispose_of_\"\(item.name)\"", comment: ""))
+        } else {
+            Text(NSLocalizedString("please_select_disposal_method", comment: ""))
+        }
+    }
+    
+    @ViewBuilder
+    private func FloatingAddButtons() -> some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                
+                // Expanded buttons
+                if isAddButtonExpanded {
+                    ExpandedAddButtons()
+                }
+                
+                // Main add button
+                MainAddButton()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func ExpandedAddButtons() -> some View {
+        Group {
+            // Add food button
+            Button(action: {
+                showingAddFood = true
+                isAddButtonExpanded = false
+            }) {
+                HStack {
+                    Text(NSLocalizedString("nav_title_add_food", comment: ""))
+                        .font(.footnote)
+                        .fontWeight(.semibold)
+                    
+                    Image(systemName: "carrot")
+                        .font(.footnote)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.green)
+                .clipShape(Capsule())
+                .shadow(radius: 2)
+            }
+            .transition(.scale.combined(with: .opacity))
+            .padding(.trailing, 8)
+            
+            // Add receipt button
+            Button(action: {
+                showingAddReceipt = true
+                isAddButtonExpanded = false
+            }) {
+                HStack {
+                    Text(NSLocalizedString("add_receipt", comment: ""))
+                        .font(.footnote)
+                        .fontWeight(.semibold)
+                    
+                    Image(systemName: "doc.text.image")
+                        .font(.footnote)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.blue)
+                .clipShape(Capsule())
+                .shadow(radius: 2)
+            }
+            .transition(.scale.combined(with: .opacity))
+            .padding(.trailing, 8)
+        }
+    }
+    
+    @ViewBuilder
+    private func MainAddButton() -> some View {
+        Button(action: {
+            withAnimation(.spring()) {
+                isAddButtonExpanded.toggle()
+            }
+        }) {
+            Image(systemName: isAddButtonExpanded ? "xmark" : "plus")
+                .font(.title2)
+                .foregroundColor(.white)
+                .frame(width: 60, height: 60)
+                .background(isAddButtonExpanded ? Color.red : Color.blue)
+                .clipShape(Circle())
+                .shadow(radius: 4)
+                .rotationEffect(.degrees(isAddButtonExpanded ? 90 : 0))
+                .animation(.spring(), value: isAddButtonExpanded)
+        }
+        .padding(.trailing, 20)
+        .padding(.bottom, 30)
     }
     
     private func deleteItems(from itemList: [FoodItem], at offsets: IndexSet) {

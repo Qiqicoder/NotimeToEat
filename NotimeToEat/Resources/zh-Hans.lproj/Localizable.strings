@@ -1,0 +1,192 @@
+/* 
+  Localizable.strings
+  NotimeToEat
+  
+  简体中文本地化
+*/
+
+// 启动弹窗
+"your_refrigerator_is_empty" = "你的冰箱空空如也，没有任何食材。";
+"recommended_dishes" = "推荐菜品";
+"generating_dishes" = "生成菜品中...";
+"give_me_dishes_recommendation" = "给我菜品推荐";
+"food_expiration_reminder" = "食材过期提醒";
+"refrigerator_status" = "冰箱状态";
+"please_consume_soon" = "请尽快食用！";
+"expiration_date" = "过期时间：%@";
+"days_remaining" = "剩余天数：";
+"days_count" = "%d 天";
+
+// 应用通用
+"app_name" = "没时间吃饭";
+"welcome_message" = "欢迎使用没时间吃饭应用";
+
+
+// 按钮和操作
+"ok" = "确定";
+"cancel" = "取消";
+"save" = "保存";
+"delete" = "删除";
+"back" = "返回";
+"done" = "完成";
+"add" = "添加";
+"edit" = "编辑";
+"search_food" = "搜索";
+"confirm" = "知道了";
+
+// 标签页
+"tab_food_list" = "食物列表";
+"tab_categories" = "分类";
+"tab_shopping_list" = "购买清单";
+"tab_receipts" = "小票";
+"tab_settings" = "设置";
+
+// 导航标题
+"nav_title_food_categories" = "食物分类";
+"nav_title_receipts" = "购物小票";
+"nav_title_settings" = "设置";
+"nav_title_edit_food" = "编辑食物";
+"nav_title_add_food" = "添加食物";
+"nav_title_select_food" = "选择食品";
+"nav_title_associated_food" = "选择关联食品";
+"nav_title_account" = "账户";
+"nav_title_add_item" = "添加商品";
+"nav_title_edit_item" = "编辑商品";
+"ALL_FOOD" = "所有食物";
+"alpha_desc" = "按名称 (Z-A)";
+"alpha_asc" = "按名称 (A-Z)";
+"date_recent" = "按过期日期 (最近)";
+"date_old" = "按过期日期 (最远)";
+
+// 设置页面
+"section_account" = "账户";
+"unknown_user" = "未知用户";
+"logged_in" = "已登录";
+"click_to_login" = "点击登录";
+"sync_data" = "同步您的数据";
+"section_statistics" = "数据统计";
+"food_history_stats" = "食物历史统计";
+"view_consumption_stats" = "查看食物消耗和浪费的统计数据";
+"section_notification_settings" = "通知设置";
+"section_storage_management" = "存储管理";
+"clear_all_food" = "清空所有食物";
+"section_about" = "关于";
+"app_slogan" = "冰箱里的东西该吃了！";
+"app_description" = "此应用帮助您管理冰箱中的食物，避免浪费";
+"notify_hours_before" = "提前 %d 小时通知";
+"expiration_notification_description" = "食物过期前将提前%d小时通知您";
+
+// 小票页面
+"receipts" = "小票";
+"shopping_receipt_image" = "购物小票图片";
+"no_receipts" = "暂无购物小票";
+"add_receipt_description" = "点击右上角添加按钮上传小票";
+"add_receipt" = "添加小票";
+"select_add_method" = "请选择添加方式";
+"take_photo" = "拍照";
+"choose_from_library" = "从相册选择";
+"delete_receipt_confirmation" = "确定要删除这张小票吗？";
+"action_cannot_be_undone" = "此操作不可撤销";
+"no_associated_food" = "暂无关联食品";
+"no_food_add_first" = "暂无食品，请先添加食品";
+"receipt_image" = "购物小票图片";
+"delete_image" = "删除图片";
+"add_receipt_image" = "添加小票图片";
+"camera_ios_only" = "照片拍摄功能仅在iOS设备上可用";
+"processing_options" = "处理选项";
+"ocr_recognition" = "OCR文本识别";
+"ai_analysis" = "AI智能分析";
+"ai_analysis_requires_ocr" = "AI分析需要先启用OCR";
+"save_and_analyze_receipt" = "保存并分析小票";
+"save_receipt" = "保存小票";
+"ai_analysis_results" = "AI分析结果";
+"ai_analysis_in_progress" = "AI分析中...";
+"select_food_to_add" = "选择要添加的食品";
+"no_related_food" = "暂无关联食品";
+"select_related_food" = "选择关联食品";
+"no_food_to_select" = "暂无食品，请先添加食品";
+"associated_foods_count" = "关联食品: %d项";
+
+// 食物编辑页面
+"section_basic_info" = "基本信息";
+"food_name" = "食物名称";
+"expiration_date" = "过期日期";
+"section_category" = "分类";
+"select_category" = "选择分类";
+"section_tags" = "标签";
+"section_notes" = "备注";
+"delete_food" = "删除食物";
+
+// 购物清单
+"shopping_unpurchased" = "待购买";
+"shopping_purchased" = "已购买";
+"shopping_list_empty" = "购物清单为空";
+"shopping_list_add_hint" = "右滑食物项并选择「添加到购物清单」来添加商品";
+"search_items" = "搜索商品";
+"item_name" = "商品名称";
+"purchased" = "已购买";
+"delete_item" = "删除商品";
+
+// 日期相关
+"expires_today" = "今天过期";
+"expires_tomorrow" = "明天过期";
+
+// 食物分类
+"category_vegetable" = "蔬菜";
+"category_fruit" = "水果";
+"category_meat" = "肉类";
+"category_seafood" = "海鲜";
+"category_dairy" = "乳制品";
+"category_grain" = "谷物";
+"category_condiment" = "调味品";
+"category_beverage" = "饮料";
+"category_snack" = "零食";
+"category_other" = "其他";
+
+// 标签
+"tag_refrigerated" = "需冷藏";
+"tag_frozen" = "冷冻";
+"tag_room_temperature" = "常温";
+"tag_favorite" = "常用";
+"tag_leftover" = "剩菜";
+
+// 食物状态
+"status_consumed" = "已消耗";
+"status_wasted" = "已浪费";
+
+// 示例食物
+"sample_food_milk" = "牛奶";
+"sample_food_apple" = "苹果";
+"sample_food_chicken" = "鸡肉";
+"sample_food_note" = "周末烧烤用";
+
+// 统计图表
+"unit_count" = "件";
+"consumed" = "已消耗";
+"wasted" = "已浪费";
+"consumption_rate" = "消耗率: %@%%";
+"waste_rate" = "浪费率: %@%%";
+
+// 账户和登录
+"login_failed" = "登录失败";
+"unknown_error" = "未知错误";
+"login_interrupted" = "登录过程被中断，请重试";
+"login_failed_try_again" = "登录失败，请重试";
+"cannot_get_user_profile" = "无法获取用户资料";
+
+// 解析相关
+"parse_food_name" = "食品名称";
+"parse_format" = "格式";
+
+// 删除操作
+"delete_simply" = "删除";
+"delete_add_to_shopping_list" = "删除并添加到购物清单";
+
+// 权限相关
+"camera_permission" = "需要使用相机来拍摄小票照片";
+"photo_library_permission" = "需要访问相册来选择小票照片";
+"notification_permission_success" = "通知权限获取成功";
+"notification_permission_failed" = "通知权限获取失败";
+
+// AI服务解析
+"formula_and_food_name" = "将每行解析为\"公式\"和\"菜名\"";
