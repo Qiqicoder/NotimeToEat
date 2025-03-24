@@ -57,6 +57,7 @@
 "date_recent" = "Date (recent)";
 "date_old" = "Date (old)";
 "expiring_soon" = "Expiring Soon";
+"expires_in_days" = "Expires in %d days";
 
 // Settings Page
 "section_account" = "Account";

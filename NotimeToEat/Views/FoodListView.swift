@@ -5,6 +5,7 @@ extension Edge {
 }
 
 // 导入Globals.swift中定义的类型和管理器
+// 导入共享的FoodItemRow组件
 
 // 定义排序选项
 enum SortOption: String, CaseIterable, Identifiable {
@@ -135,7 +136,7 @@ struct FoodListView: View {
     private func ExpiringSoonSection() -> some View {
         Section(header: Text(NSLocalizedString("expiring_soon", comment: ""))) {
             ForEach(sortItems(foodStore.expiringSoonItems)) { item in
-                FoodItemRow(item: item)
+                FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
                     .swipeActions(allowsFullSwipe: false) {
                         SwipeActionButtons(for: item)
                     }
@@ -147,7 +148,7 @@ struct FoodListView: View {
     private func ExpiredSection() -> some View {
         Section(header: Text(NSLocalizedString("expired_food", comment: ""))) {
             ForEach(sortItems(foodStore.expiredItems)) { item in
-                FoodItemRow(item: item)
+                FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
                     .swipeActions(allowsFullSwipe: false) {
                         SwipeActionButtons(for: item)
                     }
@@ -159,7 +160,7 @@ struct FoodListView: View {
     private func AllFoodSection() -> some View {
         Section(header: Text(NSLocalizedString("ALL_FOOD", comment: ""))) {
             ForEach(filteredItems) { item in
-                FoodItemRow(item: item)
+                FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
                     .swipeActions(allowsFullSwipe: false) {
                         SwipeActionButtons(for: item)
                     }
@@ -309,56 +310,6 @@ struct FoodListView: View {
         for index in offsets {
             let item = itemList[index]
             foodStore.deleteFood(item)
-        }
-    }
-}
-
-struct FoodItemRow: View {
-    let item: FoodItem
-    @EnvironmentObject var foodStore: FoodStore
-    @State private var showingEditSheet = false
-    
-    var body: some View {
-        Button(action: {
-            showingEditSheet = true
-        }) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(item.name)
-                        .font(.headline)
-                    
-                    HStack {
-                        Image(systemName: item.category.iconName)
-                            .foregroundColor(.secondary)
-                        Text(NSLocalizedString(item.category.displayName, comment: ""))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Text(item.expirationDate.remainingDaysDescription())
-                        .font(.caption)
-                        .foregroundColor(Color.forRemainingDays(item.daysRemaining))
-                }
-                
-                Spacer()
-                
-                // 显示标签
-                HStack(spacing: 2) {
-                    ForEach(item.tags, id: \.self) { tag in
-                        Image(systemName: tag.iconName)
-                            .foregroundColor(tag.color)
-                            .font(.caption)
-                            .padding(4)
-                            .background(
-                                Circle()
-                                    .fill(tag.color.opacity(0.2))
-                            )
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            EditFoodView(item: item)
         }
     }
 }
