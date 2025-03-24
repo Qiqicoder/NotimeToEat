@@ -21,7 +21,6 @@
 "app_name" = "没时间吃饭";
 "welcome_message" = "欢迎使用没时间吃饭应用";
 
-
 // 按钮和操作
 "ok" = "确定";
 "cancel" = "取消";
@@ -164,8 +163,8 @@
 "unit_count" = "件";
 "consumed" = "已消耗";
 "wasted" = "已浪费";
-"consumption_rate" = "消耗率: %@%%";
-"waste_rate" = "浪费率: %@%%";
+"consumption_rate" = "消耗率: %d%%";
+"waste_rate" = "浪费率: %d%%";
 
 // 账户和登录
 "login_failed" = "登录失败";
@@ -190,3 +189,12 @@
 
 // AI服务解析
 "formula_and_food_name" = "将每行解析为\"公式\"和\"菜名\"";
+
+"invalid_date" = "无效日期";
+"week_format" = "%@年第%d周";
+
+// 食物历史统计
+"food_history" = "食物历史";
+"select_week" = "选择周";
+"detailed_records" = "详细记录";
+"no_records_this_week" = "本周无记录";

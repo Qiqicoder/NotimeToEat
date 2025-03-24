@@ -43,7 +43,7 @@ struct PieChartView: View {
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("件")
+                    Text(NSLocalizedString("unit_count", comment: ""))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -60,9 +60,9 @@ struct PieChartView: View {
                         .frame(width: 16, height: 16)
                     
                     VStack(alignment: .leading) {
-                        Text("已消耗")
+                        Text(NSLocalizedString("consumed", comment: ""))
                             .font(.subheadline)
-                        Text("\(consumed) 件")
+                        Text("\(consumed) \(NSLocalizedString("unit_count", comment: ""))")
                             .font(.headline)
                     }
                 }
@@ -74,9 +74,9 @@ struct PieChartView: View {
                         .frame(width: 16, height: 16)
                     
                     VStack(alignment: .leading) {
-                        Text("已浪费")
+                        Text(NSLocalizedString("wasted", comment: ""))
                             .font(.subheadline)
-                        Text("\(wasted) 件")
+                        Text("\(wasted) \(NSLocalizedString("unit_count", comment: ""))")
                             .font(.headline)
                     }
                 }
@@ -86,11 +86,11 @@ struct PieChartView: View {
             // Percentages
             if total > 0 {
                 HStack(spacing: 20) {
-                    Text("消耗率: \(Int(consumedPercentage * 100))%")
+                    Text(String(format: NSLocalizedString("consumption_rate", comment: ""), Int(consumedPercentage * 100)))
                         .font(.caption)
                         .foregroundColor(.blue)
                     
-                    Text("浪费率: \(Int(wastedPercentage * 100))%")
+                    Text(String(format: NSLocalizedString("waste_rate", comment: ""), Int(wastedPercentage * 100)))
                         .font(.caption)
                         .foregroundColor(.red)
                 }

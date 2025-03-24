@@ -163,8 +163,8 @@
 "unit_count" = "items";
 "consumed" = "Consumed";
 "wasted" = "Wasted";
-"consumption_rate" = "Consumption Rate: %@%%";
-"waste_rate" = "Waste Rate: %@%%";
+"consumption_rate" = "Consumption Rate: %d%%";
+"waste_rate" = "Waste Rate: %d%%";
 
 // Account and Login
 "login_failed" = "Login Failed";
@@ -189,3 +189,12 @@
 
 // AI Service Parsing
 "formula_and_food_name" = "Parse each line as 'formula' and 'food name'";
+
+"invalid_date" = "Invalid Date";
+"week_format" = "%@ Week #%d";
+
+// 食物历史统计
+"food_history" = "Food History";
+"select_week" = "Select Week";
+"detailed_records" = "Detailed Records";
+"no_records_this_week" = "No Record this week";

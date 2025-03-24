@@ -46,10 +46,10 @@ struct HistoryView: View {
             VStack {
                 // Week Selector
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("选择周：")
+                    Text(NSLocalizedString("select_week", comment: "") + ":")
                         .font(.headline)
                     
-                    Picker("选择周", selection: $selectedWeekIndex) {
+                    Picker(NSLocalizedString("select_week", comment: ""), selection: $selectedWeekIndex) {
                         ForEach(weekDates.indices, id: \.self) { index in
                             let weekRange = getWeekRangeString(from: weekDates[index])
                             Text(weekRange).tag(index)
@@ -72,13 +72,13 @@ struct HistoryView: View {
                 
                 // Detailed entry list
                 VStack(alignment: .leading) {
-                    Text("详细记录")
+                    Text(NSLocalizedString("detailed_records", comment: ""))
                         .font(.headline)
                         .padding(.horizontal)
                     
                     List {
                         if weekEntries.isEmpty {
-                            Text("本周无记录")
+                            Text(NSLocalizedString("no_records_this_week", comment: ""))
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding()
@@ -122,7 +122,7 @@ struct HistoryView: View {
                     .id(selectedWeekIndex) // Force list recreation when selected index changes
                 }
             }
-            .navigationTitle("食物历史")
+            .navigationTitle(NSLocalizedString("food_history", comment: ""))
         }
         .onAppear {
             foodHistoryStore.load()
@@ -148,7 +148,7 @@ struct HistoryView: View {
         let weekComponents = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
         
         guard let weekStart = calendar.date(from: weekComponents) else {
-            return "无效日期"
+            return NSLocalizedString("invalid_date", comment: "")
         }
         
         let weekFormatter = DateFormatter()
@@ -158,10 +158,13 @@ struct HistoryView: View {
         yearFormatter.dateFormat = "yyyy"
         
         guard let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart) else {
-            return "无效日期"
+            return NSLocalizedString("invalid_date", comment: "")
         }
         
-        return "\(yearFormatter.string(from: weekStart))年第\(calendar.component(.weekOfYear, from: date))周"
+        let year = yearFormatter.string(from: weekStart)
+        let weekNumber = calendar.component(.weekOfYear, from: date)
+        
+        return String(format: NSLocalizedString("week_format", comment: ""), year, weekNumber)
     }
 }
 
