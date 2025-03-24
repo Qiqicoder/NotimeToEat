@@ -9,7 +9,7 @@ struct PersistenceController {
         container = NSPersistentContainer(name: "NotimeToEat")
 
         // Print the database path
-        print("数据库路径: \(NSPersistentContainer.defaultDirectoryURL().path)")
+        // print("数据库路径: \(NSPersistentContainer.defaultDirectoryURL().path)")
 
         // Configuration for in-memory storage (for testing)
         if inMemory {
