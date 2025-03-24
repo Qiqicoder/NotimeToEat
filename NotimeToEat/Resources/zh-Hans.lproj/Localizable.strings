@@ -59,6 +59,12 @@
 "expiring_soon" = "即将过期";
 "expires_in_days" = "还有%d天过期";
 
+// 分类筛选栏
+"all" = "全部";
+"no_food_items_found" = "没有找到食物";
+"no_expiring_food" = "没有即将过期的食物";
+"no_expired_food" = "没有过期的食物";
+
 // 设置页面
 "section_account" = "账户";
 "unknown_user" = "未知用户";

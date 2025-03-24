@@ -59,6 +59,12 @@
 "expiring_soon" = "Expiring Soon";
 "expires_in_days" = "Expires in %d days";
 
+// Category Filter Bar
+"all" = "All";
+"no_food_items_found" = "No food items found";
+"no_expiring_food" = "No food expiring soon";
+"no_expired_food" = "No expired food";
+
 // Settings Page
 "section_account" = "Account";
 "unknown_user" = "Unknown User";

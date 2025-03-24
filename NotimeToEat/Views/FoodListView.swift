@@ -29,10 +29,22 @@ struct FoodListView: View {
     @State private var isAddButtonExpanded = false
     @State private var showingDisposalOptions = false
     @State private var selectedFoodItem: FoodItem?
+    @State private var selectedCategory: Category? = nil
     
     var filteredItems: [FoodItem] {
-        let baseItems = searchText.isEmpty ? foodStore.foodItems : foodStore.foodItems.filter { 
-            $0.name.localizedCaseInsensitiveContains(searchText) 
+        // 首先筛选基本项目
+        var baseItems = foodStore.foodItems
+        
+        // 按搜索文本筛选
+        if !searchText.isEmpty {
+            baseItems = baseItems.filter { 
+                $0.name.localizedCaseInsensitiveContains(searchText) 
+            }
+        }
+        
+        // 按类别筛选
+        if let category = selectedCategory {
+            baseItems = baseItems.filter { $0.category == category }
         }
         
         return sortItems(baseItems)
@@ -76,26 +88,42 @@ struct FoodListView: View {
     @ViewBuilder
     private func NavigationViewContent() -> some View {
         NavigationView {
-            FoodListContent()
-                .listStyle(InsetGroupedListStyle())
-                .navigationTitle(NSLocalizedString("app_name", comment: ""))
-                .searchable(text: $searchText, prompt: NSLocalizedString("search_food", comment: ""))
-                .toolbar {
-                    ToolbarContent()
+            VStack(spacing: 0) {
+                // 顶部分类导航栏
+                ScrollView(.horizontal, showsIndicators: false) {
+                    CategoryScrollBar()
+                        .padding(.vertical, 8)
                 }
-                .sheet(isPresented: $showingAddFood) {
-                    AddFoodView()
-                }
-                .sheet(isPresented: $showingAddReceipt) {
-                    AddReceiptView()
-                }
-                .confirmationDialog(
-                    NSLocalizedString("how_to_dispose_food", comment: ""),
-                    isPresented: $showingDisposalOptions,
-                    titleVisibility: .visible,
-                    actions: { DisposalDialogButtons() },
-                    message: { DisposalDialogMessage() }
+                .background(Color(.systemBackground))
+                .overlay(
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(Color(.systemGray5)),
+                    alignment: .bottom
                 )
+                
+                // 食物列表内容
+                FoodListContent()
+                    .listStyle(InsetGroupedListStyle())
+            }
+            .navigationTitle(NSLocalizedString("app_name", comment: ""))
+            .searchable(text: $searchText, prompt: NSLocalizedString("search_food", comment: ""))
+            .toolbar {
+                ToolbarContent()
+            }
+            .sheet(isPresented: $showingAddFood) {
+                AddFoodView()
+            }
+            .sheet(isPresented: $showingAddReceipt) {
+                AddReceiptView()
+            }
+            .confirmationDialog(
+                NSLocalizedString("how_to_dispose_food", comment: ""),
+                isPresented: $showingDisposalOptions,
+                titleVisibility: .visible,
+                actions: { DisposalDialogButtons() },
+                message: { DisposalDialogMessage() }
+            )
         }
     }
     
@@ -117,29 +145,55 @@ struct FoodListView: View {
     @ViewBuilder
     private func FoodListContent() -> some View {
         List {
-            // Expiring Soon Section
-            if !foodStore.expiringSoonItems.isEmpty {
-                ExpiringSoonSection()
+            // 当未选择特定类别时，显示"即将过期"和"已过期"的分组
+            if selectedCategory == nil {
+                // Expiring Soon Section
+                if !foodStore.expiringSoonItems.isEmpty {
+                    ExpiringSoonSection()
+                }
+                
+                // Expired Section
+                if !foodStore.expiredItems.isEmpty {
+                    ExpiredSection()
+                }
             }
             
-            // Expired Section
-            if !foodStore.expiredItems.isEmpty {
-                ExpiredSection()
+            // All Food Section - 根据选择的类别显示不同的标题
+            Section(header: Text(selectedCategory == nil ? 
+                              NSLocalizedString("ALL_FOOD", comment: "") : 
+                              selectedCategory!.displayName)) {
+                if filteredItems.isEmpty {
+                    Text(NSLocalizedString("no_food_items_found", comment: "没有找到食物"))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding()
+                } else {
+                    ForEach(filteredItems) { item in
+                        FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
+                            .swipeActions(allowsFullSwipe: false) {
+                                SwipeActionButtons(for: item)
+                            }
+                    }
+                }
             }
-            
-            // All Food Section
-            AllFoodSection()
         }
     }
     
     @ViewBuilder
     private func ExpiringSoonSection() -> some View {
         Section(header: Text(NSLocalizedString("expiring_soon", comment: ""))) {
-            ForEach(sortItems(foodStore.expiringSoonItems)) { item in
-                FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
-                    .swipeActions(allowsFullSwipe: false) {
-                        SwipeActionButtons(for: item)
-                    }
+            if foodStore.expiringSoonItems.isEmpty {
+                Text(NSLocalizedString("no_expiring_food", comment: "没有即将过期的食物"))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else {
+                ForEach(sortItems(foodStore.expiringSoonItems)) { item in
+                    FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
+                        .swipeActions(allowsFullSwipe: false) {
+                            SwipeActionButtons(for: item)
+                        }
+                }
             }
         }
     }
@@ -147,23 +201,18 @@ struct FoodListView: View {
     @ViewBuilder
     private func ExpiredSection() -> some View {
         Section(header: Text(NSLocalizedString("expired_food", comment: ""))) {
-            ForEach(sortItems(foodStore.expiredItems)) { item in
-                FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
-                    .swipeActions(allowsFullSwipe: false) {
-                        SwipeActionButtons(for: item)
-                    }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func AllFoodSection() -> some View {
-        Section(header: Text(NSLocalizedString("ALL_FOOD", comment: ""))) {
-            ForEach(filteredItems) { item in
-                FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
-                    .swipeActions(allowsFullSwipe: false) {
-                        SwipeActionButtons(for: item)
-                    }
+            if foodStore.expiredItems.isEmpty {
+                Text(NSLocalizedString("no_expired_food", comment: "没有过期的食物"))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else {
+                ForEach(sortItems(foodStore.expiredItems)) { item in
+                    FoodItemRow(item: item, showEditButton: true, tagDisplayStyle: .circle)
+                        .swipeActions(allowsFullSwipe: false) {
+                            SwipeActionButtons(for: item)
+                        }
+                }
             }
         }
     }
@@ -304,6 +353,77 @@ struct FoodListView: View {
         }
         .padding(.trailing, 20)
         .padding(.bottom, 30)
+    }
+    
+    @ViewBuilder
+    private func CategoryScrollBar() -> some View {
+        HStack(spacing: 12) {
+            // 全部选项
+            CategoryButton(
+                title: NSLocalizedString("all", comment: "全部"),
+                iconName: "square.grid.2x2",
+                isSelected: selectedCategory == nil
+            ) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedCategory = nil
+                }
+            }
+            
+            // 每个类别选项
+            ForEach(Category.allCases, id: \.self) { category in
+                CategoryButton(
+                    title: category.displayName,
+                    iconName: category.iconName,
+                    isSelected: selectedCategory == category,
+                    count: foodStore.items(inCategory: category).count
+                ) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedCategory = category
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+    
+    @ViewBuilder
+    private func CategoryButton(title: String, iconName: String, isSelected: Bool, count: Int? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: iconName)
+                        .font(.caption)
+                    
+                    Text(title)
+                        .font(.caption)
+                    
+                    if let count = count, count > 0 {
+                        Text("\(count)")
+                            .font(.caption2)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Color.gray.opacity(0.8))
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color(.systemGray6))
+                .foregroundColor(isSelected ? .white : .primary)
+                .clipShape(Capsule())
+                
+                if isSelected {
+                    Rectangle()
+                        .frame(width: 20, height: 2)
+                        .foregroundColor(Color.accentColor)
+                } else {
+                    Rectangle()
+                        .frame(width: 20, height: 2)
+                        .foregroundColor(.clear)
+                }
+            }
+        }
     }
     
     private func deleteItems(from itemList: [FoodItem], at offsets: IndexSet) {
