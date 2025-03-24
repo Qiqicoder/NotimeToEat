@@ -7,18 +7,24 @@
 
 import SwiftUI
 import GoogleSignIn
+import CoreData
+import UserNotifications
+import NotimeToEat
 
 #if os(iOS)
 @main
 struct NotimeToEatApp: App {
+    // Core Data 持久化控制器
+    let persistenceController = PersistenceController.shared
+    // Food database (removed StateObject as we access shared instance directly)
     // 食品存储管理器
-    @StateObject private var foodStore = FoodStore()
+    @StateObject private var foodStore = Services.FoodStore()
     // 小票存储管理器
     @StateObject private var receiptManager = ReceiptManager.shared
     // 购物清单管理器
-    @StateObject private var shoppingListStore = ShoppingListStore()
+    @StateObject private var shoppingListStore = Services.ShoppingListStore()
     // 食物历史记录管理器
-    @StateObject private var foodHistoryStore = FoodHistoryStore()
+    @StateObject private var foodHistoryStore = Services.FoodHistoryStore()
     // 认证服务
     @StateObject private var authService = AuthService.shared
     // 控制过期食材弹窗的显示
@@ -29,6 +35,13 @@ struct NotimeToEatApp: App {
     init() {
         // 检查平台要求】
         PlatformCompatibility.setupUICompatibility()
+        // Ensure Core Data is initialized and populated at app startup
+        print("APP INIT: Initializing Core Data food database")
+        let foodDB = CoreDataFoodDatabase.shared
+        print("APP INIT: Core Data food database initialized")
+        
+        // 输出数据库内容，用于调试
+        foodDB.dumpDatabaseContent()
     }
     
     var body: some Scene {
@@ -40,22 +53,10 @@ struct NotimeToEatApp: App {
                     .environmentObject(shoppingListStore)
                     .environmentObject(foodHistoryStore)
                     .environmentObject(authService)
+                    .environment(\.managedObjectContext, persistenceController.viewContext)
                     .onAppear {
-                        // 请求通知权限
-                        NotificationManager.shared.requestAuthorization()
-                        // 加载存储的食品数据
-                        foodStore.load()
-                        // 加载小票数据
-                        receiptManager.load()
-                        // 加载购物清单数据
-                        shoppingListStore.load()
-                        // 加载食物历史数据
-                        foodHistoryStore.load()
-                        
-                        // 延迟显示过期食材弹窗，确保数据已加载
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                            checkAndShowExpirationAlert()
-                        }
+                        // 加载初始数据
+                        loadInitialData()
                     }
                     .onOpenURL { url in
                         // 处理Google登录回调
@@ -115,6 +116,32 @@ struct NotimeToEatApp: App {
             withAnimation {
                 showExpirationPopup = true
             }
+        }
+    }
+    
+    // 加载初始数据
+    private func loadInitialData() {
+        // 请求通知权限
+        NotificationManager.shared.requestAuthorization()
+        
+        // 加载食物数据
+        foodStore.load()
+        
+        // 加载购物清单
+        shoppingListStore.load()
+        
+        // 加载食物历史记录
+        foodHistoryStore.load()
+        
+        // 加载小票记录
+        receiptManager.load()
+        
+        // 强制加载常见食物数据库（确保数据在内存中）
+        _ = CoreDataFoodDatabase.shared.allFoodNames
+        
+        // 检查是否有即将过期的食物
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            checkAndShowExpirationAlert()
         }
     }
 }

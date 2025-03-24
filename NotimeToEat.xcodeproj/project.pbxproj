@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		417CCBFB2D9204B00013DCD2 /* NotimeToEat.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 417CCBF92D9204B00013DCD2 /* NotimeToEat.xcdatamodeld */; };
 		41FDE0542D8F597F0052F448 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 41FDE0532D8F597F0052F448 /* GoogleSignIn */; };
 		41FDE0562D8F597F0052F448 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 41FDE0552D8F597F0052F448 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -32,6 +33,7 @@
 		4136526D2D8DC5B3003A743A /* NotimeToEat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotimeToEat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4136527D2D8DC5B4003A743A /* NotimeToEatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotimeToEatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		413652872D8DC5B4003A743A /* NotimeToEatUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotimeToEatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		417CCBFA2D9204B00013DCD2 /* NotimeToEat.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = NotimeToEat.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -82,6 +84,7 @@
 		413652642D8DC5B3003A743A = {
 			isa = PBXGroup;
 			children = (
+				417CCBF92D9204B00013DCD2 /* NotimeToEat.xcdatamodeld */,
 				4136526F2D8DC5B3003A743A /* NotimeToEat */,
 				413652802D8DC5B4003A743A /* NotimeToEatTests */,
 				4136528A2D8DC5B4003A743A /* NotimeToEatUITests */,
@@ -248,6 +251,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				417CCBFB2D9204B00013DCD2 /* NotimeToEat.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -604,6 +608,19 @@
 			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
+
+/* Begin XCVersionGroup section */
+		417CCBF92D9204B00013DCD2 /* NotimeToEat.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				417CCBFA2D9204B00013DCD2 /* NotimeToEat.xcdatamodel */,
+			);
+			currentVersion = 417CCBFA2D9204B00013DCD2 /* NotimeToEat.xcdatamodel */;
+			path = NotimeToEat.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 413652652D8DC5B3003A743A /* Project object */;
 }

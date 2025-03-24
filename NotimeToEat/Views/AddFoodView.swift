@@ -1,22 +1,49 @@
 import SwiftUI
 import PhotosUI
 import Foundation
-import UIKit
 
-// We need to explicitly import the ReceiptManager since it's not in Globals.swift
-import NotimeToEat
+// Fix UIKit import for iOS
+#if os(iOS)
+import UIKit
+#endif
 
 // The app uses these typealias declarations from Globals.swift
 // FoodStore, Category, Tag, and Models are globally defined
 
+// 扩展建议项目，包含更多信息
+struct FoodSuggestion: Identifiable, Hashable {
+    let id = UUID()
+    let displayName: String  // 用于显示的名称（可能包含中英文）
+    let value: String        // 实际值（将被填入文本框）
+    let category: String?    // 分类（如果有）
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(displayName)
+    }
+    
+    static func == (lhs: FoodSuggestion, rhs: FoodSuggestion) -> Bool {
+        return lhs.displayName == rhs.displayName
+    }
+}
+
 struct FoodNameInputView: View {
     @Binding var text: String
+    @Binding var suggestedCategory: Models.Category
     @EnvironmentObject var foodStore: Services.FoodStore
     @EnvironmentObject var foodHistoryStore: Services.FoodHistoryStore
     @State private var showSuggestions = false
-    @State private var suggestions: [String] = []
+    @State private var suggestions: [FoodSuggestion] = []
     @State private var isFocused = false
-    var category: Models.Category? = nil  // Optional category parameter
+    @State private var foodCategoryMapping: [String: String] = [:]
+    
+    // 获取食物数据库
+    private let foodDatabase = CoreDataFoodDatabase.shared
+    
+    // Add public initializer
+    init(text: Binding<String>, suggestedCategory: Binding<Models.Category>) {
+        self._text = text
+        self._suggestedCategory = suggestedCategory
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -35,15 +62,35 @@ struct FoodNameInputView: View {
             if showSuggestions {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(suggestions, id: \.self) { suggestion in
+                        ForEach(suggestions) { suggestion in
                             Button(action: {
-                                self.text = suggestion
+                                // 修改此处，根据显示名称是否包含中文来决定使用哪个值
+                                if isChineseInput(suggestion.displayName) {
+                                    // 如果是中文显示名称，使用value（中文）
+                                    self.text = suggestion.value
+                                } else {
+                                    // 如果是英文显示名称，直接使用displayName（英文）
+                                    self.text = suggestion.displayName
+                                }
                                 self.showSuggestions = false
+                                
+                                // 无论选择哪种语言的名称，都尝试推荐分类
+                                suggestCategoryForFood(suggestion.value)
                             }) {
-                                Text(suggestion)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
+                                HStack {
+                                    Text(suggestion.displayName)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    
+                                    if let categoryString = suggestion.category, 
+                                       let category = Models.Category.allCases.first(where: { $0.rawValue == categoryString }) {
+                                        // 显示分类图标
+                                        Image(systemName: category.iconName)
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
                             }
                             .buttonStyle(PlainButtonStyle())
                             
@@ -62,71 +109,167 @@ struct FoodNameInputView: View {
         }
     }
     
+    // 检查字符串是否包含中文字符
+    private func isChineseInput(_ text: String) -> Bool {
+        // 简单判断是否包含中文字符的方法
+        let pattern = "[\\u4e00-\\u9fa5]"
+        if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+            let matches = regex.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
+            return !matches.isEmpty
+        }
+        return false
+    }
+
     private func updateSuggestions() {
         guard !text.isEmpty else {
             suggestions = []
             return
         }
         
-        // Get unique food names from multiple sources
-        var uniqueFoodNames = Set<String>()
-        var categorySpecificNames = Set<String>()
+        // 判断用户输入是中文还是英文
+        let isChineseMode = isChineseInput(text)
+        print("DEBUG: Input mode is \(isChineseMode ? "Chinese" : "English") for input: '\(text)'")
         
-        // 1. Add names from current food inventory
-        foodStore.foodItems.forEach { item in
-            if let selectedCategory = category, item.category == selectedCategory {
-                categorySpecificNames.insert(item.name)
-            } else {
-                uniqueFoodNames.insert(item.name)
+        var allSuggestions = [FoodSuggestion]()
+        
+        if isChineseMode {
+            // 中文输入模式 - 搜索中文名称
+            // 从数据库获取所有食物
+            let databaseFoods = foodDatabase.allFoodNames
+            print("DEBUG: Retrieved \(databaseFoods.count) foods from database")
+            
+            // 处理中文食物名称
+            for foodName in databaseFoods {
+                // 尝试匹配中文名称
+                if isChineseInput(foodName) && foodName.localizedCaseInsensitiveContains(text) {
+                    let category = foodDatabase.getCategoryForFood(foodName)
+                    
+                    let suggestion = FoodSuggestion(
+                        displayName: foodName, // 纯中文显示
+                        value: foodName,
+                        category: category
+                    )
+                    allSuggestions.append(suggestion)
+                    
+                    // 记录分类映射
+                    if let category = category {
+                        foodCategoryMapping[foodName] = category
+                    }
+                }
             }
-        }
-        
-        // 2. Add names from food history entries
-        foodHistoryStore.historyEntries.forEach { entry in
-            if let selectedCategory = category, entry.category == selectedCategory {
-                categorySpecificNames.insert(entry.foodName)
-            } else {
-                uniqueFoodNames.insert(entry.foodName)
+            
+            // 添加来自当前食物库的中文名称
+            foodStore.foodItems.forEach { item in
+                if item.name.localizedCaseInsensitiveContains(text) {
+                    let suggestion = FoodSuggestion(
+                        displayName: item.name,
+                        value: item.name,
+                        category: item.category.rawValue
+                    )
+                    allSuggestions.append(suggestion)
+                    foodCategoryMapping[item.name] = item.category.rawValue
+                }
             }
-        }
-        
-        // 3. Add sample food names
-        Models.FoodItem.sampleItems.forEach { item in
-            if let selectedCategory = category, item.category == selectedCategory {
-                categorySpecificNames.insert(item.name)
-            } else {
-                uniqueFoodNames.insert(item.name)
-            }
-        }
-        
-        // 4. Add common foods from our database
-        if let selectedCategory = category {
-            // Add foods from the selected category
-            CommonFoodDatabase.foods(for: selectedCategory).forEach { food in
-                categorySpecificNames.insert(food)
+            
+            // 添加来自历史记录的中文名称
+            foodHistoryStore.historyEntries.forEach { entry in
+                if entry.foodName.localizedCaseInsensitiveContains(text) {
+                    let suggestion = FoodSuggestion(
+                        displayName: entry.foodName,
+                        value: entry.foodName,
+                        category: entry.category.rawValue
+                    )
+                    allSuggestions.append(suggestion)
+                    foodCategoryMapping[entry.foodName] = entry.category.rawValue
+                }
             }
         } else {
-            // Add all common foods
-            CommonFoodDatabase.allCommonFoods.forEach { food in
-                uniqueFoodNames.insert(food)
+            // 英文输入模式 - 搜索英文名称
+            // 获取所有英文食物名称
+            let englishFoodNames = foodDatabase.allEnglishFoodNames
+            print("DEBUG: Retrieved \(englishFoodNames.count) English food names from database")
+            
+            // 处理英文食物名称
+            for englishName in englishFoodNames {
+                if englishName.localizedCaseInsensitiveContains(text) {
+                    // 找到对应的中文名和分类
+                    let chineseName = foodDatabase.getChineseNameByEnglishName(englishName)
+                    let category = chineseName != nil ? 
+                                    foodDatabase.getCategoryForFood(chineseName!) : 
+                                    nil
+                    
+                    let suggestion = FoodSuggestion(
+                        displayName: englishName, // 纯英文显示
+                        value: chineseName ?? englishName,  // 存储中文值或英文值
+                        category: category
+                    )
+                    allSuggestions.append(suggestion)
+                    
+                    // 记录分类映射 - 同时记录英文名称和中文名称的映射
+                    if let category = category {
+                        if let chineseName = chineseName {
+                            foodCategoryMapping[chineseName] = category
+                        }
+                        foodCategoryMapping[englishName] = category // 添加英文名称的映射
+                    }
+                }
             }
         }
         
-        // Filter and sort suggestions that match the current text
-        var categorySuggestions = Array(categorySpecificNames)
-            .filter { $0.localizedCaseInsensitiveContains(text) && $0 != text }
-            .sorted()
+        // 去重并按显示名称排序
+        let uniqueSuggestions = Array(Set(allSuggestions))
+        suggestions = uniqueSuggestions.sorted { $0.displayName < $1.displayName }
         
-        var generalSuggestions = Array(uniqueFoodNames)
-            .filter { $0.localizedCaseInsensitiveContains(text) && $0 != text }
-            .sorted()
-        
-        // Prioritize category-specific suggestions
-        suggestions = categorySuggestions + generalSuggestions
-        
-        // Limit the number of suggestions
+        // 限制建议数量
         if suggestions.count > 15 {
             suggestions = Array(suggestions.prefix(15))
+        }
+        
+        print("DEBUG: Generated \(suggestions.count) suggestions for input: \(text)")
+    }
+    
+    // 为食物名称获取分类（如果可能）
+    private func getCategoryForFood(_ foodName: String) -> String? {
+        // 从CoreDataFoodDatabase中查询食物的分类
+        let categoryFromDB = foodDatabase.getCategoryForFood(foodName)
+        if categoryFromDB != nil {
+            return categoryFromDB
+        }
+        
+        // 如果数据库没有，就从映射中获取
+        return foodCategoryMapping[foodName]
+    }
+    
+    // 根据食物名称推荐分类
+    private func suggestCategoryForFood(_ foodName: String) {
+        // 首先尝试直接从映射中获取
+        if let categoryString = foodCategoryMapping[foodName] {
+            // 将字符串转换为Models.Category
+            if let category = Models.Category.allCases.first(where: { $0.rawValue == categoryString }) {
+                suggestedCategory = category
+                print("DEBUG: Suggesting category \(category) for food \(foodName)")
+                return
+            }
+        }
+        
+        // 如果是英文名称，尝试查找对应的中文名称以获取分类
+        if !isChineseInput(foodName) {
+            if let chineseName = foodDatabase.getChineseNameByEnglishName(foodName),
+               let categoryString = foodDatabase.getCategoryForFood(chineseName) {
+                if let category = Models.Category.allCases.first(where: { $0.rawValue == categoryString }) {
+                    suggestedCategory = category
+                    print("DEBUG: Suggesting category \(category) for English food \(foodName)")
+                    return
+                }
+            }
+        }
+        
+        // 最后尝试直接从数据库查询
+        if let categoryString = foodDatabase.getCategoryForFood(foodName) {
+            if let category = Models.Category.allCases.first(where: { $0.rawValue == categoryString }) {
+                suggestedCategory = category
+                print("DEBUG: Suggesting category \(category) for food \(foodName) from database")
+            }
         }
     }
 }
@@ -148,7 +291,8 @@ struct AddFoodView: View {
         NavigationView {
             Form {
                 Section(header: Text(NSLocalizedString("section_basic_info", comment: ""))) {
-                    FoodNameInputView(text: $name, category: category)
+                    let _ = print("DEBUG: Current category for food input: \(category.rawValue)")
+                    FoodNameInputView(text: $name, suggestedCategory: $category)
                     
                     DatePicker(NSLocalizedString("expiration_date", comment: ""), selection: $expirationDate, displayedComponents: [.date])
                 }
