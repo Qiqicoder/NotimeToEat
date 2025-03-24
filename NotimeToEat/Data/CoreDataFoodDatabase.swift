@@ -174,41 +174,80 @@ class CoreDataFoodDatabase: ObservableObject {
         print("DEBUG: Checking database - current food count: \(count)")
         
         if count == 0 {
-            print("DEBUG: Database empty, populating with initial data...")
+            print("DEBUG: Database empty, populating with initial data from CSV...")
             
-            // Vegetables
-            addCommonFood(chineseName: "西兰花", englishName: "Broccoli", category: "vegetable")
-            addCommonFood(chineseName: "胡萝卜", englishName: "Carrot", category: "vegetable")
-            addCommonFood(chineseName: "青椒", englishName: "Green Pepper", category: "vegetable")
-            addCommonFood(chineseName: "西红柿", englishName: "Tomato", category: "vegetable")
-            addCommonFood(chineseName: "黄瓜", englishName: "Cucumber", category: "vegetable")
+            // Load data from CSV file
+            if let csvData = loadFoodDataFromCSV() {
+                for item in csvData {
+                    addCommonFood(
+                        chineseName: item.chineseName,
+                        englishName: item.englishName,
+                        category: item.category
+                    )
+                }
+                print("DEBUG: Database population completed. New food count: \(allFoodNames.count)")
+            } else {
+                print("DEBUG: Failed to load food data from CSV file")
+            }
+        }
+    }
+    
+    // MARK: - CSV Data Loading
+    
+    // Structure to represent a food item in CSV
+    private struct CSVFoodItem {
+        let chineseName: String
+        let englishName: String
+        let category: String
+    }
+    
+    // Load food data from CSV file
+    private func loadFoodDataFromCSV() -> [CSVFoodItem]? {
+        guard let csvPath = Bundle.main.path(forResource: "commonFood", ofType: "csv") else {
+            print("ERROR: Could not find commonFood.csv in bundle")
+            return nil
+        }
+        
+        do {
+            let csvString = try String(contentsOfFile: csvPath, encoding: .utf8)
+            let rows = csvString.components(separatedBy: "\n")
             
-            // Fruits
-            addCommonFood(chineseName: "苹果", englishName: "Apple", category: "fruit")
-            addCommonFood(chineseName: "香蕉", englishName: "Banana", category: "fruit")
-            addCommonFood(chineseName: "草莓", englishName: "Strawberry", category: "fruit")
-            addCommonFood(chineseName: "葡萄", englishName: "Grape", category: "fruit")
-            addCommonFood(chineseName: "橙子", englishName: "Orange", category: "fruit")
+            // Skip the header row and empty rows
+            var foodItems = [CSVFoodItem]()
             
-            // Meats
-            addCommonFood(chineseName: "鸡胸肉", englishName: "Chicken Breast", category: "meat")
-            addCommonFood(chineseName: "牛肉", englishName: "Beef", category: "meat")
-            addCommonFood(chineseName: "猪肉", englishName: "Pork", category: "meat")
-            addCommonFood(chineseName: "羊肉", englishName: "Lamb", category: "meat")
+            for (index, row) in rows.enumerated() {
+                // Skip header row and empty rows
+                if index == 0 || row.isEmpty {
+                    continue
+                }
+                
+                let columns = row.components(separatedBy: ",")
+                
+                // Ensure we have exactly 3 columns (chineseName, englishName, category)
+                guard columns.count >= 3 else {
+                    print("WARNING: Skipping invalid row in CSV: \(row)")
+                    continue
+                }
+                
+                let chineseName = columns[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                let englishName = columns[1].trimmingCharacters(in: .whitespacesAndNewlines)
+                let category = columns[2].trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                let foodItem = CSVFoodItem(
+                    chineseName: chineseName,
+                    englishName: englishName,
+                    category: category
+                )
+                
+                foodItems.append(foodItem)
+            }
             
-            // Dairy
-            addCommonFood(chineseName: "牛奶", englishName: "Milk", category: "dairy")
-            addCommonFood(chineseName: "酸奶", englishName: "Yogurt", category: "dairy")
-            addCommonFood(chineseName: "奶酪", englishName: "Cheese", category: "dairy")
-            addCommonFood(chineseName: "黄油", englishName: "Butter", category: "dairy")
+            print("DEBUG: Successfully loaded \(foodItems.count) food items from CSV")
+            return foodItems
             
-            // Seafood
-            addCommonFood(chineseName: "三文鱼", englishName: "Salmon", category: "seafood")
-            addCommonFood(chineseName: "虾", englishName: "Shrimp", category: "seafood")
-            addCommonFood(chineseName: "鱿鱼", englishName: "Squid", category: "seafood")
-            addCommonFood(chineseName: "螃蟹", englishName: "Crab", category: "seafood")
-            
-            print("DEBUG: Database population completed. New food count: \(allFoodNames.count)")
+        } catch {
+            print("ERROR: Failed to load CSV file: \(error.localizedDescription)")
+            return nil
         }
     }
     
