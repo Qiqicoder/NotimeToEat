@@ -23,6 +23,14 @@ struct EditFoodView: View {
         _notes = State(initialValue: item.notes ?? "")
     }
     
+    // 格式化日期
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
     var body: some View {
         NavigationView {
             Form {
@@ -30,6 +38,14 @@ struct EditFoodView: View {
                     TextField(NSLocalizedString("food_name", comment: ""), text: $name)
                     
                     DatePicker(NSLocalizedString("expiration_date", comment: ""), selection: $expirationDate, displayedComponents: [.date])
+                    
+                    // 显示添加时间
+                    HStack {
+                        Text("添加时间")
+                        Spacer()
+                        Text(formatDate(item.addedDate))
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 Section(header: Text(NSLocalizedString("section_category", comment: ""))) {
