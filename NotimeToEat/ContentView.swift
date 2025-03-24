@@ -214,6 +214,7 @@ struct SettingsView: View {
                 Section(header: Text("关于")) {
                     Text("冰箱里的东西该吃了！")
                         .font(.headline)
+                        .bold()
                     Text("版本: 1.0.0")
                     Text("此应用帮助您管理冰箱中的食物，避免浪费")
                 }
@@ -232,4 +233,5 @@ struct SettingsView: View {
         .environmentObject(FoodStore())
         .environmentObject(ReceiptManager.shared)
         .environmentObject(ShoppingListStore())
+        .environmentObject(AuthService.shared)
 }
