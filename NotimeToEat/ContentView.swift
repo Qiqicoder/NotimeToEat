@@ -21,29 +21,23 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            CategoryView()
-                .tabItem {
-                    Label(NSLocalizedString("tab_categories", comment: ""), systemImage: "list.bullet")
-                }
-                .tag(1)
-            
             ShoppingListView()
                 .tabItem {
                     Label(NSLocalizedString("tab_shopping_list", comment: ""), systemImage: "cart")
                 }
-                .tag(2)
+                .tag(1)
             
             ReceiptListView()
                 .tabItem {
                     Label(NSLocalizedString("tab_receipts", comment: ""), systemImage: "doc.text.image")
                 }
-                .tag(3)
+                .tag(2)
             
             SettingsView()
                 .tabItem {
                     Label(NSLocalizedString("tab_settings", comment: ""), systemImage: "gear")
                 }
-                .tag(4)
+                .tag(3)
         }
         .onAppear {
             // 加载小票数据
