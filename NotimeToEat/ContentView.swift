@@ -35,7 +35,7 @@ struct ContentView: View {
             
             SettingsView()
                 .tabItem {
-                    Label(NSLocalizedString("tab_settings", comment: ""), systemImage: "gear")
+                    Label(NSLocalizedString("tab_profile", comment: ""), systemImage: "person.circle")
                 }
                 .tag(3)
         }
@@ -159,7 +159,7 @@ struct SettingsView: View {
                     Text(NSLocalizedString("app_description", comment: ""))
                 }
             }
-            .navigationTitle(NSLocalizedString("nav_title_settings", comment: ""))
+            .navigationTitle(NSLocalizedString("nav_title_profile", comment: ""))
             .sheet(isPresented: $showingUserAccountView) {
                 UserAccountView()
                     .environmentObject(authService)

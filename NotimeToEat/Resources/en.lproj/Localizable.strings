@@ -39,11 +39,13 @@
 "tab_shopping_list" = "Shopping List";
 "tab_receipts" = "Receipts";
 "tab_settings" = "Settings";
+"tab_profile" = "Profile";
 
 // Navigation Titles
 "nav_title_food_categories" = "Food Categories";
 "nav_title_receipts" = "Shopping Receipts";
 "nav_title_settings" = "Settings";
+"nav_title_profile" = "Profile";
 "nav_title_edit_food" = "Edit Food";
 "nav_title_add_food" = "Add Food";
 "nav_title_select_food" = "Select Food";

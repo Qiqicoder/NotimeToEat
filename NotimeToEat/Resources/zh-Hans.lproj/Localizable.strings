@@ -39,11 +39,13 @@
 "tab_shopping_list" = "购买清单";
 "tab_receipts" = "小票";
 "tab_settings" = "设置";
+"tab_profile" = "个人资料";
 
 // 导航标题
 "nav_title_food_categories" = "食物分类";
 "nav_title_receipts" = "购物小票";
 "nav_title_settings" = "设置";
+"nav_title_profile" = "个人资料";
 "nav_title_edit_food" = "编辑食物";
 "nav_title_add_food" = "添加食物";
 "nav_title_select_food" = "选择食品";
