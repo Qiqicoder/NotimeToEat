@@ -27,17 +27,11 @@ struct ContentView: View {
                 }
                 .tag(1)
             
-            ReceiptListView()
-                .tabItem {
-                    Label(NSLocalizedString("tab_receipts", comment: ""), systemImage: "doc.text.image")
-                }
-                .tag(2)
-            
             SettingsView()
                 .tabItem {
                     Label(NSLocalizedString("tab_profile", comment: ""), systemImage: "person.circle")
                 }
-                .tag(3)
+                .tag(2)
         }
         .onAppear {
             // 加载小票数据
@@ -51,6 +45,7 @@ struct ContentView: View {
 struct SettingsView: View {
     @EnvironmentObject var foodStore: FoodStore
     @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var receiptManager: ReceiptManager
     @State private var notificationHours = 24 // 默认提前24小时通知
     @State private var showingHistoryView = false
     @State private var showingUserAccountView = false
@@ -121,6 +116,20 @@ struct SettingsView: View {
                     .foregroundColor(.primary)
                 }
                 
+                // 小票管理部分
+                Section(header: Text(NSLocalizedString("section_receipts", comment: ""))) {
+                    NavigationLink(destination: ReceiptListView()) {
+                        HStack {
+                            Image(systemName: "doc.text.image")
+                                .foregroundColor(.blue)
+                            Text(NSLocalizedString("nav_title_receipts", comment: ""))
+                        }
+                    }
+                    Text(NSLocalizedString("manage_receipts", comment: ""))
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
                 Section(header: Text(NSLocalizedString("section_statistics", comment: ""))) {
                     NavigationLink(destination: HistoryView()) {
                         HStack {
@@ -170,6 +179,14 @@ struct SettingsView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(FoodStore())
+        .environmentObject(ReceiptManager.shared)
+        .environmentObject(ShoppingListStore())
+        .environmentObject(AuthService.shared)
+}
+
+#Preview("Profile View") {
+    SettingsView()
         .environmentObject(FoodStore())
         .environmentObject(ReceiptManager.shared)
         .environmentObject(ShoppingListStore())

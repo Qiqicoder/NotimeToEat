@@ -69,6 +69,8 @@
 
 // Settings Page
 "section_account" = "Account";
+"section_receipts" = "Receipts";
+"manage_receipts" = "Manage shopping receipts and related items";
 "unknown_user" = "Unknown User";
 "logged_in" = "Logged In";
 "click_to_login" = "Tap to Login";

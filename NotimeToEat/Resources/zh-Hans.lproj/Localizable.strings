@@ -69,6 +69,8 @@
 
 // 设置页面
 "section_account" = "账户";
+"section_receipts" = "购物小票";
+"manage_receipts" = "管理购物小票和相关的商品";
 "unknown_user" = "未知用户";
 "logged_in" = "已登录";
 "click_to_login" = "点击登录";
