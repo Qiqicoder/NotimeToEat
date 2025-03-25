@@ -18,6 +18,7 @@
 		417CCC152D931CF80013DCD2 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 417CCC142D931CF80013DCD2 /* FirebaseCore */; };
 		417CCC172D931CF80013DCD2 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 417CCC162D931CF80013DCD2 /* FirebaseDatabase */; };
 		417CCC192D931CF80013DCD2 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 417CCC182D931CF80013DCD2 /* FirebaseFirestore */; };
+		417CCC212D933CD10013DCD2 /* SwiftJWT in Frameworks */ = {isa = PBXBuildFile; productRef = 417CCC202D933CD10013DCD2 /* SwiftJWT */; };
 		41FDE0542D8F597F0052F448 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 41FDE0532D8F597F0052F448 /* GoogleSignIn */; };
 		41FDE0562D8F597F0052F448 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 41FDE0552D8F597F0052F448 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -73,6 +74,7 @@
 				417CCC132D931CF80013DCD2 /* FirebaseAuthCombine-Community in Frameworks */,
 				41FDE0542D8F597F0052F448 /* GoogleSignIn in Frameworks */,
 				417CCC0B2D9319160013DCD2 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */,
+				417CCC212D933CD10013DCD2 /* SwiftJWT in Frameworks */,
 				41FDE0562D8F597F0052F448 /* GoogleSignInSwift in Frameworks */,
 				417CCC192D931CF80013DCD2 /* FirebaseFirestore in Frameworks */,
 				417CCC072D9319160013DCD2 /* FirebaseAnalytics in Frameworks */,
@@ -154,6 +156,7 @@
 				417CCC142D931CF80013DCD2 /* FirebaseCore */,
 				417CCC162D931CF80013DCD2 /* FirebaseDatabase */,
 				417CCC182D931CF80013DCD2 /* FirebaseFirestore */,
+				417CCC202D933CD10013DCD2 /* SwiftJWT */,
 			);
 			productName = NotimeToEat;
 			productReference = 4136526D2D8DC5B3003A743A /* NotimeToEat.app */;
@@ -240,6 +243,7 @@
 			packageReferences = (
 				41FDE0092D8F59560052F448 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				417CCC052D9319160013DCD2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				417CCC1F2D933CD10013DCD2 /* XCRemoteSwiftPackageReference "Swift-JWT" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4136526E2D8DC5B3003A743A /* Products */;
@@ -442,6 +446,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NotimeToEat/NotimeToEat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"NotimeToEat/Preview Content\"";
@@ -476,6 +481,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NotimeToEat/NotimeToEat.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"NotimeToEat/Preview Content\"";
@@ -627,6 +633,14 @@
 				minimumVersion = 11.10.0;
 			};
 		};
+		417CCC1F2D933CD10013DCD2 /* XCRemoteSwiftPackageReference "Swift-JWT" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Kitura/Swift-JWT.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.2;
+			};
+		};
 		41FDE0092D8F59560052F448 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -687,6 +701,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 417CCC052D9319160013DCD2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		417CCC202D933CD10013DCD2 /* SwiftJWT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 417CCC1F2D933CD10013DCD2 /* XCRemoteSwiftPackageReference "Swift-JWT" */;
+			productName = SwiftJWT;
 		};
 		41FDE0532D8F597F0052F448 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

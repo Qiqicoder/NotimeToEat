@@ -114,6 +114,27 @@ struct UserAccountView: View {
             
             Divider()
                 .padding(.vertical)
+            
+            // 好友区块
+            NavigationLink(destination: FriendsView()) {
+                HStack {
+                    Image(systemName: "person.2.fill")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                    
+                    Text("好友管理")
+                        .fontWeight(.medium)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
     }
     
@@ -246,6 +267,283 @@ struct UserAccountView: View {
             }
         }
     }
+}
+
+// 好友管理视图
+struct FriendsView: View {
+    @EnvironmentObject var authService: AuthService
+    @StateObject private var friendsService = FriendsService.shared
+    @State private var friendEmail = ""
+    @State private var showingInviteSheet = false
+    @State private var isInviteSending = false
+    @State private var inviteResult: String? = nil
+    @State private var showingInviteResult = false
+    @State private var selectedTab = 0
+    
+    var body: some View {
+        VStack {
+            // 标签栏
+            Picker("分类", selection: $selectedTab) {
+                Text("我的好友").tag(0)
+                Text("好友请求").tag(1)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal)
+            
+            TabView(selection: $selectedTab) {
+                // 好友列表标签
+                friendsListView
+                    .tag(0)
+                
+                // 好友请求标签
+                requestsListView
+                    .tag(1)
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        }
+        .navigationTitle("好友管理")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showingInviteSheet = true
+                }) {
+                    Image(systemName: "person.badge.plus")
+                }
+            }
+        }
+        .sheet(isPresented: $showingInviteSheet) {
+            inviteView
+        }
+        .alert(isPresented: $showingInviteResult) {
+            Alert(
+                title: Text(inviteResult?.contains("成功") ?? false ? "邀请已发送" : "邀请发送失败"),
+                message: Text(inviteResult ?? ""),
+                dismissButton: .default(Text("确定"))
+            )
+        }
+        .onAppear {
+            friendsService.loadFriends()
+            friendsService.loadPendingRequests()
+        }
+    }
+    
+    // 好友列表视图
+    private var friendsListView: some View {
+        List {
+            if friendsService.friends.isEmpty {
+                Text("您还没有添加任何好友")
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else {
+                ForEach(friendsService.friends) { friend in
+                    HStack {
+                        // 好友头像
+                        if let photoURL = friend.photoURL {
+                            AsyncImage(url: photoURL) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                ProgressView()
+                            }
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                        } else {
+                            // 使用初始字母作为头像
+                            ZStack {
+                                Circle()
+                                    .fill(Color.blue)
+                                    .frame(width: 40, height: 40)
+                                Text(friend.initials)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(friend.name)
+                                .font(.headline)
+                            
+                            if let email = friend.email {
+                                Text(email)
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(.leading, 8)
+                        
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                    .contextMenu {
+                        Button(role: .destructive, action: {
+                            deleteFriend(id: friend.id)
+                        }) {
+                            Label("删除好友", systemImage: "person.badge.minus")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // 好友请求列表视图
+    private var requestsListView: some View {
+        List {
+            if friendsService.pendingRequests.isEmpty {
+                Text("没有待处理的好友请求")
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else {
+                ForEach(friendsService.pendingRequests) { request in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(request.senderName)
+                                .font(.headline)
+                            
+                            Text(request.senderEmail)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                        
+                        // 接受按钮
+                        Button(action: {
+                            acceptFriendRequest(request)
+                        }) {
+                            Text("接受")
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.green)
+                                .cornerRadius(6)
+                        }
+                        
+                        // 拒绝按钮
+                        Button(action: {
+                            rejectFriendRequest(request)
+                        }) {
+                            Text("拒绝")
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.red)
+                                .cornerRadius(6)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+    
+    // 邀请视图
+    private var inviteView: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("发送好友邀请")) {
+                    TextField("好友邮箱地址", text: $friendEmail)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+                
+                Section {
+                    Button(action: sendFriendInvite) {
+                        if isInviteSending {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                        } else {
+                            Text("发送邀请")
+                        }
+                    }
+                    .disabled(friendEmail.isEmpty || isInviteSending)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+            .navigationTitle("添加好友")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") {
+                        showingInviteSheet = false
+                    }
+                }
+            }
+        }
+    }
+    
+    // 发送好友邀请
+    private func sendFriendInvite() {
+        guard !friendEmail.isEmpty else { return }
+        
+        isInviteSending = true
+        
+        friendsService.sendFriendRequest(to: friendEmail) { success, message in
+            isInviteSending = false
+            inviteResult = message
+            
+            if success {
+                friendEmail = ""
+                showingInviteSheet = false
+            }
+            
+            showingInviteResult = true
+        }
+    }
+    
+    // 删除好友
+    private func deleteFriend(id: String) {
+        friendsService.removeFriend(id: id) { _ in
+            // 处理完成后无需额外操作，服务已更新state
+        }
+    }
+    
+    // 接受好友请求
+    private func acceptFriendRequest(_ request: FriendRequest) {
+        friendsService.acceptFriendRequest(request) { _ in
+            // 处理完成后无需额外操作，服务已更新state
+        }
+    }
+    
+    // 拒绝好友请求
+    private func rejectFriendRequest(_ request: FriendRequest) {
+        friendsService.rejectFriendRequest(request) { _ in
+            // 处理完成后无需额外操作，服务已更新state
+        }
+    }
+}
+
+// 好友项目模型
+struct FriendItem: Identifiable {
+    let id: String
+    let name: String
+    let email: String?
+    let photoURL: URL?
+    
+    var initials: String {
+        let components = name.components(separatedBy: " ")
+        if components.count > 1, 
+           let first = components.first?.first,
+           let last = components.last?.first {
+            return "\(first)\(last)".uppercased()
+        } else if let first = name.first {
+            return String(first).uppercased()
+        }
+        return "?"
+    }
+}
+
+// 好友请求模型
+struct FriendRequest: Identifiable {
+    let id: String
+    let senderName: String
+    let senderEmail: String
+    let timestamp: Date
 }
 
 // EmailLoginView - 电子邮件登录/注册视图

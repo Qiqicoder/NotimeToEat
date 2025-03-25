@@ -3,6 +3,7 @@ import SwiftUI
 import FirebaseAuth
 import GoogleSignIn
 import FirebaseCore
+import FirebaseFirestore
 
 class AuthService: ObservableObject {
     // 单例模式
@@ -15,14 +16,48 @@ class AuthService: ObservableObject {
     // 记住登录状态的UserDefaults键
     private let userDefaultsKey = "loggedInUser"
     
+    // Firestore引用
+    private let db = Firestore.firestore()
+    
     private init() {
         // 尝试从UserDefaults恢复用户登录状态
         restoreUserSession()
+        
+        // 监听Firebase认证状态变化
+        Auth.auth().addStateDidChangeListener { [weak self] (_, user) in
+            guard let self = self else { return }
+            
+            if let firebaseUser = user {
+                // 用户已登录
+                let appUser = User(
+                    id: firebaseUser.uid,
+                    email: firebaseUser.email ?? "",
+                    displayName: firebaseUser.displayName ?? firebaseUser.email?.components(separatedBy: "@").first ?? "用户",
+                    photoURL: firebaseUser.photoURL
+                )
+                
+                DispatchQueue.main.async {
+                    self.currentUser = appUser
+                    self.isAuthenticated = true
+                    self.saveUserSession()
+                    
+                    // 保存/更新用户信息到Firestore
+                    self.saveUserToFirestore(user: appUser)
+                }
+            } else {
+                // 用户已登出
+                DispatchQueue.main.async {
+                    self.currentUser = User.anonymous
+                    self.isAuthenticated = false
+                    self.saveUserSession()
+                }
+            }
+        }
     }
     
     // 恢复用户会话
     private func restoreUserSession() {
-        if let userData = UserDefaults.standard.data(forKey: userDefaultsKey),
+        if var userData = UserDefaults.standard.data(forKey: userDefaultsKey),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             self.currentUser = user
             self.isAuthenticated = user.isLoggedIn
@@ -33,6 +68,29 @@ class AuthService: ObservableObject {
     private func saveUserSession() {
         if let encodedData = try? JSONEncoder().encode(currentUser) {
             UserDefaults.standard.set(encodedData, forKey: userDefaultsKey)
+        }
+    }
+    
+    // 将用户信息保存到Firestore
+    private func saveUserToFirestore(user: User) {
+        var userData: [String: Any] = [
+            "email": user.email,
+            "displayName": user.displayName ?? "用户",
+            "lastActive": FieldValue.serverTimestamp()
+        ]
+        
+        // 如果有头像URL，也保存
+        if let photoURL = user.photoURL?.absoluteString {
+            userData["photoURL"] = photoURL
+        }
+        
+        // 使用用户ID作为文档ID
+        db.collection("users").document(user.id).setData(userData, merge: true) { error in
+            if let error = error {
+                print("保存用户信息到Firestore失败: \(error.localizedDescription)")
+            } else {
+                print("成功保存用户信息到Firestore")
+            }
         }
     }
     
@@ -98,6 +156,10 @@ class AuthService: ObservableObject {
                     self.currentUser = appUser
                     self.isAuthenticated = true
                     self.saveUserSession()
+                    
+                    // 保存用户信息到Firestore
+                    self.saveUserToFirestore(user: appUser)
+                    
                     completion(true, nil)
                 }
             }
@@ -133,6 +195,10 @@ class AuthService: ObservableObject {
                 self.currentUser = appUser
                 self.isAuthenticated = true
                 self.saveUserSession()
+                
+                // 保存用户信息到Firestore
+                self.saveUserToFirestore(user: appUser)
+                
                 completion(true, nil)
             }
         }
@@ -167,6 +233,10 @@ class AuthService: ObservableObject {
                 self.currentUser = appUser
                 self.isAuthenticated = true
                 self.saveUserSession()
+                
+                // 保存/更新用户信息到Firestore
+                self.saveUserToFirestore(user: appUser)
+                
                 completion(true, nil)
             }
         }

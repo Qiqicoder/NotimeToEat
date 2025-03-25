@@ -49,6 +49,7 @@ struct SettingsView: View {
     @State private var notificationHours = 24 // 默认提前24小时通知
     @State private var showingHistoryView = false
     @State private var showingUserAccountView = false
+    @State private var showingFirestoreDebugView = false
     
     var body: some View {
         NavigationView {
@@ -160,6 +161,26 @@ struct SettingsView: View {
                     }
                 }
                 
+                // 添加Firestore调试部分
+                if authService.isAuthenticated {
+                    Section(header: Text("Firebase调试")) {
+                        Button(action: {
+                            showingFirestoreDebugView = true
+                        }) {
+                            HStack {
+                                Image(systemName: "flame")
+                                    .foregroundColor(.orange)
+                                Text("Firestore数据库调试")
+                            }
+                        }
+                        .foregroundColor(.primary)
+                        
+                        Text("测试Firestore连接和查看数据库内容")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+                
                 Section(header: Text(NSLocalizedString("section_about", comment: ""))) {
                     Text(NSLocalizedString("app_slogan", comment: ""))
                         .font(.headline)
@@ -172,6 +193,9 @@ struct SettingsView: View {
             .sheet(isPresented: $showingUserAccountView) {
                 UserAccountView()
                     .environmentObject(authService)
+            }
+            .sheet(isPresented: $showingFirestoreDebugView) {
+                FirestoreDebugView()
             }
         }
     }
