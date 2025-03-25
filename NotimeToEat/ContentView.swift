@@ -51,6 +51,11 @@ struct SettingsView: View {
     @State private var showingUserAccountView = false
     @State private var showingFirestoreDebugView = false
     
+    // 隐藏调试模式
+    @State private var debugTapCount = 0
+    @State private var debugModeEnabled = false
+    @State private var lastTapTime: Date = Date()
+    
     var body: some View {
         NavigationView {
             Form {
@@ -161,31 +166,39 @@ struct SettingsView: View {
                     }
                 }
                 
-                // 添加Firestore调试部分
-                if authService.isAuthenticated {
-                    Section(header: Text("Firebase调试")) {
-                        Button(action: {
-                            showingFirestoreDebugView = true
-                        }) {
-                            HStack {
-                                Image(systemName: "flame")
-                                    .foregroundColor(.orange)
-                                Text("Firestore数据库调试")
-                            }
-                        }
-                        .foregroundColor(.primary)
-                        
-                        Text("测试Firestore连接和查看数据库内容")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                }
+                // Firebase调试部分已删除
                 
                 Section(header: Text(NSLocalizedString("section_about", comment: ""))) {
                     Text(NSLocalizedString("app_slogan", comment: ""))
                         .font(.headline)
                         .bold()
                     Text("Ver: 1.0.0")
+                        // 添加隐藏的点击触发器
+                        .onTapGesture {
+                            let now = Date()
+                            // 判断点击间隔，如果超过1.5秒，重置计数器
+                            if now.timeIntervalSince(lastTapTime) > 1.5 {
+                                debugTapCount = 1
+                            } else {
+                                debugTapCount += 1
+                            }
+                            lastTapTime = now
+                            
+                            // 需要连续点击7次才能激活
+                            if debugTapCount >= 7 {
+                                debugTapCount = 0
+                                debugModeEnabled = true
+                                
+                                // 触觉反馈
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                
+                                // 显示调试视图
+                                if authService.isAuthenticated {
+                                    showingFirestoreDebugView = true
+                                }
+                            }
+                        }
                     Text(NSLocalizedString("app_description", comment: ""))
                 }
             }

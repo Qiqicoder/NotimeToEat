@@ -521,4 +521,5 @@ class FriendsService: ObservableObject {
 // 使Services能够访问FriendsService
 extension Services {
     typealias FriendsService = NotimeToEat.FriendsService
+    typealias Auth = FirebaseAuth.Auth
 } 
