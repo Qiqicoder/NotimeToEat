@@ -273,7 +273,7 @@ struct EditShoppingItemView: View {
     
     private func saveItem() {
         let updatedItem = ShoppingItem(
-//            id: item.id,
+            id: item.id,
             name: name,
             category: category,
             addedDate: item.addedDate,

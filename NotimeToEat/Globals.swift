@@ -176,6 +176,15 @@ extension Models {
             self.isPurchased = isPurchased
             self.notes = notes
         }
+        
+        init(id: UUID, name: String, category: Category = .other, addedDate: Date = Date(), isPurchased: Bool = false, notes: String? = nil) {
+            self.id = id
+            self.name = name
+            self.category = category
+            self.addedDate = addedDate
+            self.isPurchased = isPurchased
+            self.notes = notes
+        }
     }
 
     // 食物处理方式
