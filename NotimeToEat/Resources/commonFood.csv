@@ -21,3 +21,169 @@ chineseName,englishName,category
 虾,Shrimp,seafood
 鱿鱼,Squid,seafood
 螃蟹,Crab,seafood
+菠菜,Spinach,vegetable
+紫甘蓝,Red Cabbage,vegetable
+南瓜,Pumpkin,vegetable
+白萝卜,Daikon,vegetable
+芦笋,Asparagus,vegetable
+豌豆,Peas,vegetable
+玉米,Corn,vegetable
+洋葱,Onion,vegetable
+大蒜,Garlic,vegetable
+生姜,Ginger,vegetable
+秋葵,Okra,vegetable
+甜菜,Beetroot,vegetable
+芹菜,Celery,vegetable
+韭菜,Chinese Chive,vegetable
+茼蒿,Crown Daisy,vegetable
+苦瓜,Bitter Melon,vegetable
+冬瓜,Wax Gourd,vegetable
+芋头,Taro,vegetable
+山药,Chinese Yam,vegetable
+茄子,Eggplant,vegetable
+樱桃番茄,Cherry Tomato,vegetable
+雪豆,Snow Pea,vegetable
+芒果,Mango,fruit
+菠萝,Pineapple,fruit
+西瓜,Watermelon,fruit
+桃子,Peach,fruit
+梨,Pear,fruit
+猕猴桃,Kiwi Fruit,fruit
+蓝莓,Blueberry,fruit
+石榴,Pomegranate,fruit
+樱桃,Cherry,fruit
+荔枝,Lychee,fruit
+火龙果,Dragon Fruit,fruit
+哈密瓜,Hami Melon,fruit
+百香果,Passion Fruit,fruit
+椰子,Coconut,fruit
+杏子,Apricot,fruit
+李子,Plum,fruit
+柿子,Persimmon,fruit
+山竹,Mangosteen,fruit
+杨桃,Star Fruit,fruit
+鸭肉,Duck,meat
+火鸡,Turkey,meat
+鹿肉,Venison,meat
+鹅肉,Goose,meat
+兔肉,Rabbit,meat
+培根,Bacon,meat
+火腿,Ham,meat
+香肠,Sausage,meat
+鹌鹑,Quail,meat
+奶油,Cream,dairy
+炼乳,Condensed Milk,dairy
+冰淇淋,Ice Cream,dairy
+奶粉,Milk Powder,dairy
+酸奶油,Sour Cream,dairy
+羊奶,Goat Milk,dairy
+马苏里拉奶酪,Mozzarella,dairy
+奶油奶酪,Cream Cheese,dairy
+金枪鱼,Tuna,seafood
+鳕鱼,Cod,seafood
+鲈鱼,Sea Bass,seafood
+鲑鱼,Trout,seafood
+鳗鱼,Eel,seafood
+牡蛎,Oyster,seafood
+扇贝,Scallop,seafood
+贻贝,Mussel,seafood
+龙虾,Lobster,seafood
+蛤蜊,Clam,seafood
+带子,Scallop,seafood
+海带,Kelp,seafood
+海苔,Nori,seafood
+芥兰,Chinese Kale,vegetable
+羽衣甘蓝,Kale,vegetable
+甜椒,Bell Pepper,vegetable
+红苋菜,Red Spinach,vegetable
+苤蓝,Kohlrabi,vegetable
+荷兰豆,Sugar Snap Pea,vegetable
+红葱头,Shallot,vegetable
+抱子甘蓝,Brussels Sprouts,vegetable
+蕨菜,Fiddlehead Fern,vegetable
+莴苣,Lettuce,vegetable
+红菜头,Beetroot,vegetable
+菊苣,Endive,vegetable
+芝麻菜,Arugula,vegetable
+罗勒,Basil,vegetable
+薄荷,Mint,vegetable
+欧芹,Parsley,vegetable
+茴香,Fennel,vegetable
+紫苏,Perilla,vegetable
+牛蒡,Burdock Root,vegetable
+莲藕,Lotus Root,vegetable
+菱角,Water Caltrop,vegetable
+慈姑,Arrowhead,vegetable
+魔芋,Konjac,vegetable
+竹笋,Bamboo Shoot,vegetable
+荸荠,Water Chestnut,vegetable
+仙人掌叶,Nopal,vegetable
+番薯叶,Sweet Potato Leaves,vegetable
+龙须菜,Asparagus Bean,vegetable
+枇杷,Loquat,fruit
+莲雾,Wax Apple,fruit
+红毛丹,Rambutan,fruit
+黄皮,Wampee,fruit
+人心果,Sapodilla,fruit
+番石榴,Guava,fruit
+桑葚,Mulberry,fruit
+无花果,Fig,fruit
+杨梅,Chinese Bayberry,fruit
+榴莲,Durian,fruit
+菠萝蜜,Jackfruit,fruit
+油桃,Nectarine,fruit
+鳄梨,Avocado,fruit
+枸杞,Goji Berry,fruit
+沙棘,Sea Buckthorn,fruit
+刺梨,Prickly Pear,fruit
+灯笼果,Cape Gooseberry,fruit
+蛇皮果,Salak,fruit
+释迦,Custard Apple,fruit
+蛋黄果,Canistel,fruit
+猪肝,Pork Liver,meat
+牛肚,Beef Tripe,meat
+鸡心,Chicken Heart,meat
+鸭胗,Duck Gizzard,meat
+猪蹄,Pig Trotters,meat
+牛尾,Ox Tail,meat
+羊排,Lamb Chop,meat
+鹿肉,Venison,meat
+火鸡胸,Turkey Breast,meat
+鹅肝,Foie Gras,meat
+兔腿,Rabbit Leg,meat
+鹌鹑蛋,Quail Egg,meat
+鸭舌,Duck Tongue,meat
+鸡软骨,Chicken Cartilage,meat
+猪血,Pork Blood,meat
+牛舌,Beef Tongue,meat
+切达奶酪,Cheddar Cheese,dairy
+布里奶酪,Brie Cheese,dairy
+帕玛森奶酪,Parmesan Cheese,dairy
+菲达奶酪,Feta Cheese,dairy
+格鲁耶尔奶酪,Gruyère Cheese,dairy
+乳清奶酪,Ricotta Cheese,dairy
+山羊奶酪,Goat Cheese,dairy
+酸奶饮料,Yogurt Drink,dairy
+黄油牛奶,Buttermilk,dairy
+低脂牛奶,Low-fat Milk,dairy
+多宝鱼,Turbot,seafood
+石斑鱼,Grouper,seafood
+黄花鱼,Yellow Croaker,seafood
+鲳鱼,Pomfret,seafood
+秋刀鱼,Sanma,seafood
+章鱼,Octopus,seafood
+海胆,Sea Urchin,seafood
+鲍鱼,Abalone,seafood
+海参,Sea Cucumber,seafood
+龙利鱼,Flounder,seafood
+鲱鱼,Herring,seafood
+沙丁鱼,Sardine,seafood
+鳐鱼,Skate,seafood
+比目鱼,Halibut,seafood
+鲭鱼,Mackerel,seafood
+鳀鱼,Anchovy,seafood
+象拔蚌,Geoduck,seafood
+蛏子,Razor Clam,seafood
+青口,Green Mussel,seafood
+海螺,Conch,seafood
+藤壶,Gooseneck Barnacle,seafood
