@@ -332,6 +332,9 @@ class ReceiptManager: ObservableObject {
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
         
+        // 添加中文和英文识别支持
+        request.recognitionLanguages = ["zh-Hans", "zh-Hant", "en-US"] // 支持简体中文、繁体中文和英文
+        
         // 执行请求
         do {
             try requestHandler.perform([request])
