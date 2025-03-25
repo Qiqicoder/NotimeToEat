@@ -1,10 +1,10 @@
 import SwiftUI
-import GoogleSignInSwift
+import GoogleSignIn
 
 struct UserAccountView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.presentationMode) var presentationMode
-    @State private var showingLoginSheet = false
+    @State private var showingEmailLoginSheet = false
     @State private var loginError: String? = nil
     @State private var showErrorAlert = false
     
@@ -42,31 +42,29 @@ struct UserAccountView: View {
                     }
                 )
             }
-            // 使用sheet的onDismiss而不是在回调中手动关闭
-            .sheet(isPresented: $showingLoginSheet, onDismiss: {
-                // 当sheet关闭后，如果有错误，显示错误警报
+            // 邮箱登录Sheet
+            .sheet(isPresented: $showingEmailLoginSheet, onDismiss: {
                 if loginError != nil {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         showErrorAlert = true
                     }
                 }
             }) {
-                LoginView(completion: { success, error in
+                EmailLoginView(completion: { success, error in
                     if !success {
                         if let error = error {
                             loginError = error.localizedDescription
-                            print("登录失败: \(error.localizedDescription)")
+                            print("邮箱登录失败: \(error.localizedDescription)")
                         } else {
                             loginError = "登录失败，请重试"
-                            print("登录失败: 未知错误")
+                            print("邮箱登录失败: 未知错误")
                         }
                     } else {
-                        print("登录成功")
+                        print("邮箱登录成功")
                         loginError = nil
                     }
-                    // 完全在回调中关闭sheet，而不是在LoginView中
                     DispatchQueue.main.async {
-                        showingLoginSheet = false
+                        showingEmailLoginSheet = false
                     }
                 })
             }
@@ -167,54 +165,219 @@ struct UserAccountView: View {
                     .cornerRadius(10)
                 }
             } else {
-                // Google登录按钮
-                GoogleSignInButton(viewModel: GoogleSignInButtonViewModel(scheme: .dark, style: .wide, state: .normal)) {
-                    // 显示Google登录
-                    loginError = nil  // 重置任何先前的错误
-                    showErrorAlert = false
-                    showingLoginSheet = true
+                VStack(spacing: 15) {
+                    // Gmail登录按钮
+                    Button(action: {
+                        loginWithGmail()
+                    }) {
+                        HStack {
+                            Image("google_icon")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .padding(.trailing, 2)
+                            Text("使用Gmail账号登录")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white)
+                        .foregroundColor(.black)
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    .padding(.horizontal)
+                    
+                    // 邮箱登录按钮
+                    Button(action: {
+                        loginError = nil
+                        showErrorAlert = false
+                        showingEmailLoginSheet = true
+                    }) {
+                        HStack {
+                            Image(systemName: "envelope.fill")
+                            Text("邮箱登录/注册")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
                 }
-                .frame(height: 50)
-                .padding(.horizontal)
-                .cornerRadius(10)
+            }
+        }
+    }
+    
+    // Gmail登录方法
+    private func loginWithGmail() {
+        // 获取当前视图的UIViewController
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            print("无法获取根视图控制器")
+            return
+        }
+        
+        // 获取当前呈现的控制器
+        var currentController = rootViewController
+        while let presentedController = currentController.presentedViewController {
+            currentController = presentedController
+        }
+        
+        loginError = nil
+        showErrorAlert = false
+        
+        // 调用AuthService的Gmail登录方法
+        authService.signInWithGmail(presentingViewController: currentController) { success, error in
+            if !success {
+                if let error = error {
+                    self.loginError = error.localizedDescription
+                    print("Gmail登录失败: \(error.localizedDescription)")
+                } else {
+                    self.loginError = "登录失败，请重试"
+                    print("Gmail登录失败: 未知错误")
+                }
+                self.showErrorAlert = true
+            } else {
+                print("Gmail登录成功")
             }
         }
     }
 }
 
-// 登录视图 - 处理登录流程的presentation controller
-struct LoginView: UIViewControllerRepresentable {
+// EmailLoginView - 电子邮件登录/注册视图
+struct EmailLoginView: View {
     @EnvironmentObject var authService: AuthService
+    @Environment(\.presentationMode) var presentationMode
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var isLoginMode = true
+    @State private var isLoading = false
+    @State private var errorMessage: String? = nil
+    
     var completion: (Bool, Error?) -> Void
     
-    class Coordinator: NSObject {
-        var parent: LoginView
-        var hasTriggeredLogin = false
-        
-        init(parent: LoginView) {
-            self.parent = parent
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text(isLoginMode ? "登录" : "注册")) {
+                    TextField("电子邮箱", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                    
+                    SecureField("密码", text: $password)
+                    
+                    if !isLoginMode {
+                        SecureField("确认密码", text: $confirmPassword)
+                    }
+                }
+                
+                if let errorMessage = errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                    }
+                }
+                
+                Section {
+                    Button(action: handleAuthentication) {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                        } else {
+                            Text(isLoginMode ? "登录" : "注册")
+                        }
+                    }
+                    .disabled(!isValidForm || isLoading)
+                    
+                    Button(action: {
+                        isLoginMode.toggle()
+                        errorMessage = nil
+                    }) {
+                        Text(isLoginMode ? "没有账号？点击注册" : "已有账号？点击登录")
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+            .navigationTitle(isLoginMode ? "账号登录" : "账号注册")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") {
+                        completion(false, nil)
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
         }
     }
     
-    func makeCoordinator() -> Coordinator {
-        return Coordinator(parent: self)
+    private var isValidForm: Bool {
+        if email.isEmpty || password.isEmpty {
+            return false
+        }
+        
+        if !isLoginMode && (password != confirmPassword || password.count < 6) {
+            return false
+        }
+        
+        return true
     }
     
-    func makeUIViewController(context: Context) -> UIViewController {
-        let viewController = UIViewController()
-        return viewController
-    }
-    
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // 使用coordinator来跟踪是否已经触发了登录，防止重复调用
-        if !context.coordinator.hasTriggeredLogin {
-            context.coordinator.hasTriggeredLogin = true
-            
-            // 延迟一些时间确保视图已经完全显示
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                authService.signInWithGoogle(presentingViewController: uiViewController) { success, error in
-                    // 完成回调
-                    completion(success, error)
+    private func handleAuthentication() {
+        errorMessage = nil
+        isLoading = true
+        
+        // 验证输入
+        if !isValidForm {
+            if password.count < 6 {
+                errorMessage = "密码长度不能少于6位"
+            } else if !isLoginMode && password != confirmPassword {
+                errorMessage = "两次输入的密码不一致"
+            } else {
+                errorMessage = "请填写所有必填项"
+            }
+            isLoading = false
+            return
+        }
+        
+        if isLoginMode {
+            // 登录
+            authService.signInWithEmail(email: email, password: password) { success, error in
+                DispatchQueue.main.async {
+                    isLoading = false
+                    if let error = error {
+                        errorMessage = error.localizedDescription
+                        completion(false, error)
+                    } else if success {
+                        completion(true, nil)
+                        presentationMode.wrappedValue.dismiss()
+                    } else {
+                        errorMessage = "登录失败，请稍后重试"
+                        completion(false, NSError(domain: "EmailAuth", code: 1, userInfo: [NSLocalizedDescriptionKey: "未知错误"]))
+                    }
+                }
+            }
+        } else {
+            // 注册
+            authService.createUserWithEmail(email: email, password: password) { success, error in
+                DispatchQueue.main.async {
+                    isLoading = false
+                    if let error = error {
+                        errorMessage = error.localizedDescription
+                        completion(false, error)
+                    } else if success {
+                        completion(true, nil)
+                        presentationMode.wrappedValue.dismiss()
+                    } else {
+                        errorMessage = "注册失败，请稍后重试"
+                        completion(false, NSError(domain: "EmailAuth", code: 1, userInfo: [NSLocalizedDescriptionKey: "未知错误"]))
+                    }
                 }
             }
         }

@@ -10,10 +10,32 @@ import GoogleSignIn
 import CoreData
 import UserNotifications
 import NotimeToEat
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+
+// Firebase AppDelegate
+class AppDelegate: NSObject, UIApplicationDelegate {
+  func application(_ application: UIApplication,
+                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+    FirebaseApp.configure()
+    return true
+  }
+  
+  // 处理Gmail登录回调
+  func application(_ app: UIApplication,
+                  open url: URL,
+                  options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    return GIDSignIn.sharedInstance.handle(url)
+  }
+}
 
 #if os(iOS)
 @main
 struct NotimeToEatApp: App {
+    // Firebase app delegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
     // Core Data 持久化控制器
     let persistenceController = PersistenceController.shared
     // Food database (removed StateObject as we access shared instance directly)

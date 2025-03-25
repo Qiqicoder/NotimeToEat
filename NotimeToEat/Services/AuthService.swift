@@ -1,7 +1,8 @@
 import Foundation
 import SwiftUI
+import FirebaseAuth
 import GoogleSignIn
-import GoogleSignInSwift
+import FirebaseCore
 
 class AuthService: ObservableObject {
     // 单例模式
@@ -35,128 +36,151 @@ class AuthService: ObservableObject {
         }
     }
     
-    // Google登录
-    func signInWithGoogle(presentingViewController: UIViewController, completion: @escaping (Bool, Error?) -> Void) {
-        // 确保已经配置了Google登录
-        let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String
-        guard clientID != nil else {
-            let error = NSError(domain: "com.notimetoeat.auth", code: 500, userInfo: [NSLocalizedDescriptionKey: "Google登录配置错误：缺少Client ID"])
-            print("Google登录失败: Client ID not found in Info.plist")
+    // Gmail登录
+    func signInWithGmail(presentingViewController: UIViewController, completion: @escaping (Bool, Error?) -> Void) {
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            let error = NSError(domain: "com.notimetoeat.auth", code: 500, userInfo: [NSLocalizedDescriptionKey: "Firebase配置错误：无法获取ClientID"])
+            print("Gmail登录失败: Client ID not found")
             completion(false, error)
             return
         }
         
-        // 检查是否有现有的登录会话
-        GIDSignIn.sharedInstance.restorePreviousSignIn { [weak self] user, error in
-            guard let self = self else { return }
-            
-            if let user = user, error == nil {
-                // 用户已经登录，直接使用现有会话
-                self.processSignInResult(user: user, completion: completion)
-                return
-            }
-            
-            // 禁用当前已经显示的其他任何弹窗或Sheet
-            if let topController = self.getTopViewController(from: presentingViewController) {
-                for subview in topController.view.subviews {
-                    if subview.isKind(of: UIVisualEffectView.self) || subview.isKind(of: UIAlertController.self) {
-                        subview.removeFromSuperview()
-                    }
-                }
-                
-                // 在GoogleSign-In 8.0.0版本中使用signIn方法
-                // 禁用任何现有的正在呈现的内容
-                if topController.presentedViewController != nil {
-                    topController.dismiss(animated: false) {
-                        self.initiateGoogleSignIn(presentingViewController: topController, completion: completion)
-                    }
-                } else {
-                    self.initiateGoogleSignIn(presentingViewController: topController, completion: completion)
-                }
-            } else {
-                self.initiateGoogleSignIn(presentingViewController: presentingViewController, completion: completion)
-            }
-        }
-    }
-    
-    // 辅助方法来获取顶层视图控制器
-    private func getTopViewController(from viewController: UIViewController) -> UIViewController? {
-        // 如果当前控制器正在显示其他控制器，获取显示的控制器
-        if let presented = viewController.presentedViewController {
-            return self.getTopViewController(from: presented)
-        }
+        // 创建Google登录配置
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
         
-        // 如果是TabBarController，获取选中的控制器
-        if let tabBarController = viewController as? UITabBarController {
-            if let selected = tabBarController.selectedViewController {
-                return self.getTopViewController(from: selected)
-            }
-        }
-        
-        // 如果是NavigationController，获取可见的控制器
-        if let navigationController = viewController as? UINavigationController {
-            if let visibleViewController = navigationController.visibleViewController {
-                return self.getTopViewController(from: visibleViewController)
-            }
-        }
-        
-        // 返回当前控制器
-        return viewController
-    }
-    
-    // 启动Google登录流程
-    private func initiateGoogleSignIn(presentingViewController: UIViewController, completion: @escaping (Bool, Error?) -> Void) {
-        GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController) { [weak self] signInResult, error in
+        // 开始登录流程
+        GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController) { [weak self] result, error in
             guard let self = self else { return }
             
             if let error = error {
-                if let authError = error as? NSError {
-                    // 区分登录错误类型，但减少日志输出
-                    if authError.domain == "com.google.GIDSignIn" && authError.code == -5 {
-                        // 用户取消了登录
-                        completion(false, NSError(domain: "AuthService", code: 2, userInfo: [NSLocalizedDescriptionKey: "登录过程被中断，请重试"]))
-                    } else {
-                        // 其他登录错误
-                        completion(false, NSError(domain: "AuthService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Google登录失败：\(authError.localizedDescription)"]))
-                    }
-                } else {
-                    // 通用错误
-                    completion(false, NSError(domain: "AuthService", code: 4, userInfo: [NSLocalizedDescriptionKey: "登录失败，请重试"]))
-                }
+                print("Gmail登录错误: \(error.localizedDescription)")
+                completion(false, error)
                 return
             }
             
-            guard let signInResult = signInResult else {
+            guard let user = result?.user,
+                  let idToken = user.idToken?.tokenString else {
+                let error = NSError(domain: "com.notimetoeat.auth", code: 501, userInfo: [NSLocalizedDescriptionKey: "无法获取用户令牌"])
+                print("Gmail登录失败: 无法获取用户令牌")
+                completion(false, error)
+                return
+            }
+            
+            // 使用Google的idToken和accessToken创建Firebase凭证
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: user.accessToken.tokenString)
+            
+            // 使用凭证登录Firebase
+            Auth.auth().signIn(with: credential) { [weak self] authResult, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("Firebase使用Gmail凭证登录失败: \(error.localizedDescription)")
+                    completion(false, error)
+                    return
+                }
+                
+                guard let firebaseUser = authResult?.user else {
+                    completion(false, NSError(domain: "AuthService", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法获取用户资料"]))
+                    return
+                }
+                
+                // 创建应用用户
+                let appUser = User(
+                    id: firebaseUser.uid,
+                    email: firebaseUser.email ?? "",
+                    displayName: firebaseUser.displayName ?? "用户",
+                    photoURL: firebaseUser.photoURL
+                )
+                
+                // 更新当前用户并保存会话
+                DispatchQueue.main.async {
+                    self.currentUser = appUser
+                    self.isAuthenticated = true
+                    self.saveUserSession()
+                    completion(true, nil)
+                }
+            }
+        }
+    }
+    
+    // 使用电子邮件注册用户
+    func createUserWithEmail(email: String, password: String, completion: @escaping (Bool, Error?) -> Void) {
+        Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("创建用户失败: \(error.localizedDescription)")
+                completion(false, error)
+                return
+            }
+            
+            guard let firebaseUser = authResult?.user else {
                 completion(false, NSError(domain: "AuthService", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法获取用户资料"]))
                 return
             }
             
-            // 处理登录结果
-            self.processSignInResult(user: signInResult.user, completion: completion)
+            // 创建应用用户
+            let appUser = User(
+                id: firebaseUser.uid,
+                email: firebaseUser.email ?? "",
+                displayName: firebaseUser.displayName ?? email.components(separatedBy: "@").first ?? "用户",
+                photoURL: firebaseUser.photoURL
+            )
+            
+            // 更新当前用户并保存会话
+            DispatchQueue.main.async {
+                self.currentUser = appUser
+                self.isAuthenticated = true
+                self.saveUserSession()
+                completion(true, nil)
+            }
         }
     }
     
-    // 处理登录结果
-    private func processSignInResult(user: GIDGoogleUser, completion: @escaping (Bool, Error?) -> Void) {
-        // 创建用户对象
-        let appUser = User(
-            id: user.userID ?? "",
-            email: user.profile?.email ?? "",
-            displayName: user.profile?.name ?? "",
-            photoURL: user.profile?.imageURL(withDimension: 100)
-        )
-        // 更新当前用户并保存会话
-        DispatchQueue.main.async {
-            self.currentUser = appUser
-            self.isAuthenticated = true
-            self.saveUserSession()
-            completion(true, nil)
+    // 使用电子邮件登录
+    func signInWithEmail(email: String, password: String, completion: @escaping (Bool, Error?) -> Void) {
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] authResult, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("邮箱登录失败: \(error.localizedDescription)")
+                completion(false, error)
+                return
+            }
+            
+            guard let firebaseUser = authResult?.user else {
+                completion(false, NSError(domain: "AuthService", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法获取用户资料"]))
+                return
+            }
+            
+            // 创建应用用户
+            let appUser = User(
+                id: firebaseUser.uid,
+                email: firebaseUser.email ?? "",
+                displayName: firebaseUser.displayName ?? email.components(separatedBy: "@").first ?? "用户",
+                photoURL: firebaseUser.photoURL
+            )
+            
+            // 更新当前用户并保存会话
+            DispatchQueue.main.async {
+                self.currentUser = appUser
+                self.isAuthenticated = true
+                self.saveUserSession()
+                completion(true, nil)
+            }
         }
     }
     
     // 退出登录
     func signOut(completion: @escaping (Bool) -> Void) {
-        GIDSignIn.sharedInstance.signOut()
+        do {
+            try Auth.auth().signOut()
+            // 同时退出Google账号
+            GIDSignIn.sharedInstance.signOut()
+        } catch {
+            print("Firebase登出错误: \(error.localizedDescription)")
+        }
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }

@@ -11,14 +11,16 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.174740323091-0lenrlhnst4udtcf9o02ub169gevg8e7</string>
+				<string>com.googleusercontent.apps.352764489027-h0odnrehjr0jm2f8l75jr7g6u00ljo2g</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array/>
+		</dict>
 	</array>
-	<key>CLIENT_ID</key>
-	<string>174740323091-0lenrlhnst4udtcf9o02ub169gevg8e7.apps.googleusercontent.com</string>
-	<key>GIDClientID</key>
-	<string>174740323091-0lenrlhnst4udtcf9o02ub169gevg8e7.apps.googleusercontent.com</string>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
@@ -61,7 +63,5 @@
 	</array>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
-	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.174740323091-0lenrlhnst4udtcf9o02ub169gevg8e7</string>
 </dict>
 </plist>
