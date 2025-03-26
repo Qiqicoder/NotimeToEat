@@ -28,7 +28,6 @@ class AuthService: ObservableObject {
     enum LoginStateChange {
         case loggedIn(User)       // 新登录
         case loggedOut(User)      // 登出
-        case switchedUser(oldUser: User, newUser: User)  // 切换用户
     }
     
     init() {
@@ -53,8 +52,6 @@ class AuthService: ObservableObject {
                 )
                 
                 DispatchQueue.main.async {
-                    // 检查用户是否变更
-                    let isUserSwitched = self.isAuthenticated && oldUser.id != appUser.id
                     let isNewLogin = !self.isAuthenticated
                     
                     // 更新当前用户
@@ -70,10 +67,6 @@ class AuthService: ObservableObject {
                         // 新登录
                         print("触发新登录事件: \(appUser.email ?? "unknown")")
                         self.onLoginStateChanged?(.loggedIn(appUser))
-                    } else if isUserSwitched {
-                        // 切换用户
-                        print("触发用户切换事件: \(oldUser.email ?? "unknown") -> \(appUser.email ?? "unknown")")
-                        self.onLoginStateChanged?(.switchedUser(oldUser: oldUser, newUser: appUser))
                     }
                 }
             } else {

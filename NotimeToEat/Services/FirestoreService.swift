@@ -206,6 +206,8 @@ class FirestoreService: ObservableObject {
                 mergedItems.append(cloudItem)
                 newItemsCount += 1
             }
+            // 注意：如果本地和云端都有相同ID的项目，我们保留本地版本
+            // 这种策略可以根据需要调整，例如可以比较时间戳选择较新的版本
         }
         
         print("数据合并完成: 本地 \(localItems.count) 项 + 云端新增 \(newItemsCount) 项 = \(mergedItems.count) 项")
@@ -213,6 +215,119 @@ class FirestoreService: ObservableObject {
     }
     
     // MARK: - 删除本地数据
+    
+    /// 从Firestore删除指定的食物数据
+    /// - Parameters:
+    ///   - foodItemID: 要删除的食物项ID
+    ///   - completion: 完成回调，返回成功状态和可能的错误
+    func deleteFoodItem(withID foodItemID: UUID, completion: @escaping (Bool, Error?) -> Void) {
+        guard authService.isAuthenticated else {
+            print("删除食物数据失败: 用户未登录")
+            completion(false, NSError(domain: "com.notimetoeat.firestore", code: 401, userInfo: [NSLocalizedDescriptionKey: "用户未登录"]))
+            return
+        }
+        
+        isSyncing = true
+        syncError = nil
+        
+        let userID = authService.currentUser.id
+        let foodDocRef = db.collection("users").document(userID).collection("foods").document(foodItemID.uuidString)
+        
+        print("准备从Firestore删除食物数据: \(foodItemID.uuidString)")
+        
+        foodDocRef.delete { [weak self] error in
+            guard let self = self else { return }
+            
+            self.isSyncing = false
+            
+            if let error = error {
+                self.syncError = error
+                print("从Firestore删除食物数据失败: \(error.localizedDescription)")
+                completion(false, error)
+            } else {
+                print("从Firestore成功删除食物数据: \(foodItemID.uuidString)")
+                completion(true, nil)
+            }
+        }
+    }
+    
+    /// 删除本地已删除但云端仍存在的食物数据
+    /// - Parameters:
+    ///   - localItemIDs: 本地食物项ID集合
+    ///   - completion: 完成回调，返回成功状态和可能的错误
+    func syncDeletedItems(localItemIDs: Set<UUID>, completion: @escaping (Bool, Error?) -> Void) {
+        guard authService.isAuthenticated else {
+            print("同步删除操作失败: 用户未登录")
+            completion(false, NSError(domain: "com.notimetoeat.firestore", code: 401, userInfo: [NSLocalizedDescriptionKey: "用户未登录"]))
+            return
+        }
+        
+        isSyncing = true
+        syncError = nil
+        
+        let userID = authService.currentUser.id
+        let foodCollectionRef = db.collection("users").document(userID).collection("foods")
+        
+        // 获取云端所有食物数据
+        foodCollectionRef.getDocuments { [weak self] snapshot, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                self.isSyncing = false
+                self.syncError = error
+                print("获取Firestore食物数据失败: \(error.localizedDescription)")
+                completion(false, error)
+                return
+            }
+            
+            guard let documents = snapshot?.documents, !documents.isEmpty else {
+                // 云端没有数据，不需要删除
+                self.isSyncing = false
+                print("Firestore中没有需要同步删除的数据")
+                completion(true, nil)
+                return
+            }
+            
+            // 创建批量删除操作
+            let batch = self.db.batch()
+            var deletedCount = 0
+            
+            // 查找云端存在但本地已删除的项目
+            for document in documents {
+                if let idString = document.data()["id"] as? String,
+                   let id = UUID(uuidString: idString),
+                   !localItemIDs.contains(id) {
+                    // 如果云端存在但本地没有，则需要从云端删除
+                    batch.deleteDocument(document.reference)
+                    deletedCount += 1
+                }
+            }
+            
+            if deletedCount == 0 {
+                // 没有需要删除的项目
+                self.isSyncing = false
+                print("没有需要从Firestore删除的食物数据")
+                completion(true, nil)
+                return
+            }
+            
+            // 执行批量删除
+            batch.commit { [weak self] error in
+                guard let self = self else { return }
+                
+                self.isSyncing = false
+                
+                if let error = error {
+                    self.syncError = error
+                    print("从Firestore批量删除食物数据失败: \(error.localizedDescription)")
+                    completion(false, error)
+                } else {
+                    print("成功从Firestore删除\(deletedCount)个食物数据项")
+                    completion(true, nil)
+                }
+            }
+        }
+    }
     
     /// 从Firestore删除用户的所有食物数据
     /// - Parameter completion: 完成回调，返回成功状态和可能的错误

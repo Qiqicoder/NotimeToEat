@@ -6,7 +6,6 @@ import Foundation
 enum DataSyncPromptType {
     case uploadLocal     // 上传本地数据到云端
     case deleteLocal     // 删除本地数据
-    case switchUser      // 切换用户前上传数据
 }
 
 /// 数据同步协调器，用于处理登录、注销和用户切换时的数据同步
@@ -77,11 +76,6 @@ class DataSyncCoordinator: ObservableObject {
                 // 用户登出
                 print("用户登出: \(user.email ?? "unknown")")
                 self.handleLogout(user: user)
-                
-            case .switchedUser(let oldUser, let newUser):
-                // 切换用户
-                print("用户切换: \(oldUser.email ?? "unknown") -> \(newUser.email ?? "unknown")")
-                self.handleUserSwitch(oldUser: oldUser, newUser: newUser)
             }
         }
         
@@ -124,40 +118,26 @@ class DataSyncCoordinator: ObservableObject {
         }
     }
     
-    /// 处理用户切换
-    private func handleUserSwitch(oldUser: User, newUser: User) {
-        print("处理用户切换: \(oldUser.email ?? "unknown") -> \(newUser.email ?? "unknown")")
-        // 首先询问是否上传旧用户的数据
-        if !foodStore.foodItems.isEmpty {
-            print("本地有 \(foodStore.foodItems.count) 个食物项目，显示切换用户提示")
-            syncPromptType = .switchUser
-            showSyncPrompt = true
-        } else {
-            // 没有本地数据需要保存，直接获取新用户的数据
-            print("本地没有数据，直接获取新用户的数据")
-            fetchCloudData()
-        }
-    }
+
     
     // MARK: - 数据同步操作
     
     /// 确认上传本地数据到云端
     func confirmUploadData() {
-        print("开始上传数据到云端")
+        print("开始双向同步数据")
         isSyncing = true
         
-        foodStore.syncToCloud { [weak self] success, error in
+        // 使用新的双向同步方法，可以保留本地和云端的所有数据
+        foodStore.syncOnLogin { [weak self] success, error in
             guard let self = self else { return }
             
             self.isSyncing = false
             
             if success {
-                print("上传数据成功，开始获取并合并云端数据")
-                // 上传成功后，获取并合并云端数据
-                self.fetchCloudData()
+                print("登录时双向同步数据成功")
             } else {
                 // 处理错误...
-                print("上传数据失败: \(error?.localizedDescription ?? "未知错误")")
+                print("登录时双向同步数据失败: \(error?.localizedDescription ?? "未知错误")")
             }
         }
     }
@@ -168,31 +148,6 @@ class DataSyncCoordinator: ObservableObject {
         foodStore.clearLocalData()
     }
     
-    /// 确认用户切换时上传数据
-    func confirmUploadAndSwitchUser() {
-        print("开始在切换用户前上传数据")
-        isSyncing = true
-        
-        // 先上传当前用户的数据
-        foodStore.syncToCloud { [weak self] success, error in
-            guard let self = self else { return }
-            
-            self.isSyncing = false
-            
-            if success {
-                print("切换用户前上传数据成功，清空本地数据")
-                // 上传成功后，清空本地数据
-                self.foodStore.clearLocalData()
-                
-                // 然后获取新用户的数据
-                print("获取新用户的数据")
-                self.fetchCloudData()
-            } else {
-                // 处理错误...
-                print("切换用户时上传数据失败: \(error?.localizedDescription ?? "未知错误")")
-            }
-        }
-    }
     
     /// 从云端获取数据
     private func fetchCloudData() {
@@ -218,12 +173,6 @@ class DataSyncCoordinator: ObservableObject {
         print("取消数据同步提示")
         showSyncPrompt = false
         
-        // 如果是用户切换场景，仍需要获取新用户的数据
-        if syncPromptType == .switchUser {
-            print("是用户切换场景，清空本地数据并获取新用户数据")
-            foodStore.clearLocalData()
-            fetchCloudData()
-        }
     }
 }
 

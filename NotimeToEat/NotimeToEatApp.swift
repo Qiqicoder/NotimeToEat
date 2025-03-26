@@ -240,8 +240,6 @@ struct NotimeToEatApp: App {
             dataSyncCoordinator.confirmUploadData()
         case .deleteLocal:
             dataSyncCoordinator.confirmDeleteLocalData()
-        case .switchUser:
-            dataSyncCoordinator.confirmUploadAndSwitchUser()
         }
         
         // 关闭提示

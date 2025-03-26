@@ -100,8 +100,6 @@ struct DataSyncPromptView: View {
             return "上传本地数据"
         case .deleteLocal:
             return "删除本地数据"
-        case .switchUser:
-            return "切换用户警告"
         }
     }
     
@@ -111,8 +109,6 @@ struct DataSyncPromptView: View {
             return "检测到本地有数据，是否要上传到云端？这样可以在其他设备上访问您的数据。"
         case .deleteLocal:
             return "是否删除保存在本地的数据？此操作不可撤销。"
-        case .switchUser:
-            return "您正在切换到另一个账号。是否要先上传当前账号的数据以避免丢失？"
         }
     }
     
@@ -122,8 +118,6 @@ struct DataSyncPromptView: View {
             return "arrow.up.doc.fill"
         case .deleteLocal:
             return "trash.fill"
-        case .switchUser:
-            return "person.2.fill"
         }
     }
     
@@ -133,8 +127,6 @@ struct DataSyncPromptView: View {
             return .blue
         case .deleteLocal:
             return .red
-        case .switchUser:
-            return .orange
         }
     }
     
@@ -144,8 +136,6 @@ struct DataSyncPromptView: View {
             return "上传数据"
         case .deleteLocal:
             return "删除数据"
-        case .switchUser:
-            return "上传并切换"
         }
     }
     
@@ -155,8 +145,6 @@ struct DataSyncPromptView: View {
             return .blue
         case .deleteLocal:
             return .red
-        case .switchUser:
-            return .orange
         }
     }
     

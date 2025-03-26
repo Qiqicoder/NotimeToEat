@@ -373,6 +373,9 @@ extension Services {
             
             // 安排通知
             NotificationManager.shared.scheduleExpirationNotification(for: item)
+            
+            // 自动同步到云端
+            syncToCloudIfLoggedIn()
         }
         
         // 更新现有食物
@@ -383,6 +386,9 @@ extension Services {
                 
                 // 更新通知
                 NotificationManager.shared.scheduleExpirationNotification(for: item)
+                
+                // 自动同步到云端
+                syncToCloudIfLoggedIn()
             }
         }
         
@@ -393,6 +399,36 @@ extension Services {
             
             // 取消通知
             NotificationManager.shared.cancelNotification(for: item)
+            
+            // 如果已登录，从云端删除该食物项
+            if AuthService.shared.isAuthenticated {
+                FirestoreService.shared.deleteFoodItem(withID: item.id) { success, error in
+                    if success {
+                        print("成功从云端删除食物: \(item.name)")
+                    } else if let error = error {
+                        print("从云端删除食物失败: \(error.localizedDescription)")
+                    }
+                }
+            }
+            
+            // 自动同步到云端 - 已经单独删除了，不需要再次同步
+            // syncToCloudIfLoggedIn()
+        }
+        
+        // 如果用户已登录，自动同步到云端
+        private func syncToCloudIfLoggedIn() {
+            // 检查用户是否已登录
+            if AuthService.shared.isAuthenticated {
+                syncToCloud { success, error in
+                    if success {
+                        print("自动同步食物列表到云端成功")
+                    } else if let error = error {
+                        print("自动同步食物列表到云端失败: \(error.localizedDescription)")
+                    }
+                }
+            } else {
+                print("用户未登录，跳过自动同步")
+            }
         }
         
         // 按照过期日期排序的食物
@@ -434,14 +470,36 @@ extension Services {
         /// 将食物数据同步到Firestore
         /// - Parameter completion: 完成回调
         func syncToCloud(completion: @escaping (Bool, Error?) -> Void) {
-            // 使用FirestoreService进行数据上传
-            FirestoreService.shared.uploadFoodItems(foodItems) { success, error in
-                if success {
-                    print("成功将\(self.foodItems.count)个食物项目同步到云端")
-                } else if let error = error {
-                    print("同步到云端失败: \(error.localizedDescription)")
+            // 首先上传本地食物项目
+            FirestoreService.shared.uploadFoodItems(foodItems) { [weak self] success, error in
+                guard let self = self else {
+                    completion(false, nil)
+                    return
                 }
-                completion(success, error)
+                
+                if !success {
+                    if let error = error {
+                        print("同步到云端失败: \(error.localizedDescription)")
+                    }
+                    completion(false, error)
+                    return
+                }
+                
+                print("成功将\(self.foodItems.count)个食物项目同步到云端")
+                
+                // 然后同步删除操作 - 删除云端存在但本地已删除的项目
+                let localItemIDs = Set(self.foodItems.map { $0.id })
+                FirestoreService.shared.syncDeletedItems(localItemIDs: localItemIDs) { deleteSuccess, deleteError in
+                    if deleteSuccess {
+                        print("成功同步删除操作到云端")
+                    } else if let deleteError = deleteError {
+                        print("同步删除操作到云端失败: \(deleteError.localizedDescription)")
+                    }
+                    
+                    // 无论删除同步是否成功，都返回上传的结果
+                    // 因为主要功能是确保本地数据已上传
+                    completion(success, error)
+                }
             }
         }
         
@@ -475,6 +533,56 @@ extension Services {
                     }
                 } else {
                     completion(false, nil)
+                }
+            }
+        }
+        
+        /// 登录时的完全双向同步（保留本地和云端的所有数据）
+        /// - Parameter completion: 完成回调
+        func syncOnLogin(completion: @escaping (Bool, Error?) -> Void) {
+            // 1. 先获取云端数据
+            FirestoreService.shared.fetchFoodItems { [weak self] cloudItems, error in
+                guard let self = self else { 
+                    completion(false, nil)
+                    return 
+                }
+                
+                if let error = error {
+                    print("登录同步: 从云端获取数据失败: \(error.localizedDescription)")
+                    completion(false, error)
+                    return
+                }
+                
+                var mergedItems = self.foodItems
+                
+                // 2. 合并云端数据到本地
+                if let cloudItems = cloudItems, !cloudItems.isEmpty {
+                    // 合并云端和本地数据
+                    mergedItems = FirestoreService.shared.mergeFoodItems(
+                        localItems: self.foodItems,
+                        cloudItems: cloudItems
+                    )
+                    
+                    // 更新本地数据
+                    DispatchQueue.main.async {
+                        self.foodItems = mergedItems
+                        self.save()
+                    }
+                    
+                    print("登录同步: 已合并 \(cloudItems.count) 个云端食物项目")
+                }
+                
+                // 3. 将合并后的完整数据上传到云端，但不同步删除（保留所有数据）
+                FirestoreService.shared.uploadFoodItems(mergedItems) { success, uploadError in
+                    if success {
+                        print("登录同步: 成功将 \(mergedItems.count) 个合并后的食物项目上传到云端")
+                        completion(true, nil)
+                    } else {
+                        if let uploadError = uploadError {
+                            print("登录同步: 上传合并数据失败: \(uploadError.localizedDescription)")
+                        }
+                        completion(false, uploadError)
+                    }
                 }
             }
         }
