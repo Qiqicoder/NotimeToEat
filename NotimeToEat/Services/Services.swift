@@ -20,7 +20,42 @@ enum Services {
     
 }
 
-// Connect the standalone ReceiptManager to the Services namespace
+// 正确定义所有服务类的类型别名
+// 这允许在整个应用中使用统一的命名空间，同时避免循环引用
+
+// AuthService and FirestoreService are defined as standalone classes
+// We provide access to them through global type aliases
+//typealias AuthService = NotimeToEat.AuthService
+//typealias FirestoreService = NotimeToEat.FirestoreService
+//typealias DataSyncCoordinator = NotimeToEat.DataSyncCoordinator
+
+// AIService is part of the Services namespace
 extension Services {
-    typealias ReceiptManager = NotimeToEat.ReceiptManager
-} 
+//    class AIService {
+//        let apiKey: String
+//        
+//        init(apiKey: String) {
+//            self.apiKey = apiKey
+//        }
+//        
+//        func recommendDishesForFood(expiringFood: String, allFoods: [String], completion: @escaping ([(formula: String, dish: String)]?) -> Void) {
+//            // Just return some default recommendations for now
+//            let recommendations = [
+//                (formula: expiringFood, dish: "\(expiringFood)炒饭"),
+//                (formula: expiringFood, dish: "清蒸\(expiringFood)")
+//            ]
+//            completion(recommendations)
+//        }
+//    }
+}
+
+// FoodStore, ShoppingListStore and FoodHistoryStore are directly accessible through Services namespace
+// through extensions defined in their respective files
+
+// Connect the standalone ReceiptManager to the Services namespace
+//extension Services {
+//    typealias ReceiptManager = ReceiptManager
+//}
+
+//typealias FriendsService = FriendsService
+//typealias AIService = AIService 

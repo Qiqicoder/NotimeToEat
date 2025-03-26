@@ -428,6 +428,65 @@ extension Services {
             // 删除食物
             deleteFood(item)
         }
+
+        // MARK: - 云端同步功能
+        
+        /// 将食物数据同步到Firestore
+        /// - Parameter completion: 完成回调
+        func syncToCloud(completion: @escaping (Bool, Error?) -> Void) {
+            // 使用FirestoreService进行数据上传
+            FirestoreService.shared.uploadFoodItems(foodItems) { success, error in
+                if success {
+                    print("成功将\(self.foodItems.count)个食物项目同步到云端")
+                } else if let error = error {
+                    print("同步到云端失败: \(error.localizedDescription)")
+                }
+                completion(success, error)
+            }
+        }
+        
+        /// 从Firestore获取数据并合并到本地
+        /// - Parameter completion: 完成回调
+        func fetchFromCloud(completion: @escaping (Bool, Error?) -> Void) {
+            FirestoreService.shared.fetchFoodItems { [weak self] cloudItems, error in
+                guard let self = self else { 
+                    completion(false, nil)
+                    return 
+                }
+                
+                if let error = error {
+                    print("从云端获取数据失败: \(error.localizedDescription)")
+                    completion(false, error)
+                    return
+                }
+                
+                if let cloudItems = cloudItems {
+                    // 合并云端和本地数据
+                    let mergedItems = FirestoreService.shared.mergeFoodItems(
+                        localItems: self.foodItems,
+                        cloudItems: cloudItems
+                    )
+                    
+                    // 更新本地数据
+                    DispatchQueue.main.async {
+                        self.foodItems = mergedItems
+                        self.save()
+                        completion(true, nil)
+                    }
+                } else {
+                    completion(false, nil)
+                }
+            }
+        }
+        
+        /// 清空本地数据
+        func clearLocalData() {
+            foodItems.removeAll()
+            save()
+            
+            // 取消所有通知
+            NotificationManager.shared.cancelAllNotifications()
+        }
     }
 
     class ShoppingListStore: ObservableObject {

@@ -18,7 +18,13 @@ import FirebaseAuth
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
+    // 确保Firebase只被配置一次
+    if FirebaseApp.app() == nil {
+        FirebaseApp.configure()
+        print("Firebase配置完成 - 在AppDelegate中")
+    } else {
+        print("Firebase已经配置过，跳过")
+    }
     return true
   }
   
@@ -49,12 +55,22 @@ struct NotimeToEatApp: App {
     @StateObject private var foodHistoryStore = Services.FoodHistoryStore()
     // 认证服务
     @StateObject private var authService = AuthService.shared
+    // 数据同步协调器
+    @StateObject private var dataSyncCoordinator = DataSyncCoordinator.shared
     // 控制过期食材弹窗的显示
     @State private var showExpirationPopup = false
     // 最快过期的食材
     @State private var soonestExpiringFood: FoodItem?
     
     init() {
+        // 打印Firebase状态 - 不要在这里配置Firebase，而是由AppDelegate负责
+        print("开始应用初始化，检查Firebase配置状态...")
+        if FirebaseApp.app() != nil {
+            print("Firebase已经配置 - 由AppDelegate负责")
+        } else {
+            print("警告: Firebase未配置，这可能导致身份验证和同步功能失效")
+        }
+        
         // 检查平台要求】
         PlatformCompatibility.setupUICompatibility()
         // Ensure Core Data is initialized and populated at app startup
@@ -75,10 +91,21 @@ struct NotimeToEatApp: App {
                     .environmentObject(shoppingListStore)
                     .environmentObject(foodHistoryStore)
                     .environmentObject(authService)
+                    .environmentObject(dataSyncCoordinator)
                     .environment(\.managedObjectContext, persistenceController.viewContext)
                     .onAppear {
                         // 加载初始数据
                         loadInitialData()
+                        
+                        // 打印登录状态
+                        print("应用启动时的登录状态: \(authService.isAuthenticated ? "已登录" : "未登录")")
+                        if authService.isAuthenticated {
+                            print("当前登录用户: \(authService.currentUser.displayName ?? "") (\(authService.currentUser.email ?? ""))")
+                        }
+                        
+                        // 重要：为DataSyncCoordinator注入FoodStore实例
+                        dataSyncCoordinator.setFoodStore(foodStore)
+                        print("已注入FoodStore到DataSyncCoordinator")
                     }
                     .onOpenURL { url in
                         // 处理Google登录回调
@@ -101,6 +128,45 @@ struct NotimeToEatApp: App {
                         isShowing: $showExpirationPopup
                     )
                     .transition(.scale)
+                }
+                
+                // 数据同步提示弹窗
+                if dataSyncCoordinator.showSyncPrompt {
+                    Color.black.opacity(0.4)
+                        .edgesIgnoringSafeArea(.all)
+                        .onTapGesture {
+                            // 点击空白处不关闭，防止误操作
+                        }
+                    
+                    DataSyncPromptView(
+                        promptType: dataSyncCoordinator.syncPromptType,
+                        foodItems: foodStore.foodItems,
+                        onConfirm: {
+                            handleSyncPromptConfirm()
+                        },
+                        onCancel: {
+                            dataSyncCoordinator.cancelSyncPrompt()
+                        }
+                    )
+                    .transition(.scale)
+                }
+                
+                // 同步中的加载指示器
+                if dataSyncCoordinator.isSyncing {
+                    Color.black.opacity(0.4)
+                        .edgesIgnoringSafeArea(.all)
+                    
+                    VStack {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding()
+                        
+                        Text("正在同步数据...")
+                            .foregroundColor(.white)
+                            .font(.headline)
+                            .padding(.top)
+                    }
                 }
             }
         }
@@ -165,6 +231,21 @@ struct NotimeToEatApp: App {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             checkAndShowExpirationAlert()
         }
+    }
+    
+    // 处理同步提示确认
+    private func handleSyncPromptConfirm() {
+        switch dataSyncCoordinator.syncPromptType {
+        case .uploadLocal:
+            dataSyncCoordinator.confirmUploadData()
+        case .deleteLocal:
+            dataSyncCoordinator.confirmDeleteLocalData()
+        case .switchUser:
+            dataSyncCoordinator.confirmUploadAndSwitchUser()
+        }
+        
+        // 关闭提示
+        dataSyncCoordinator.showSyncPrompt = false
     }
 }
 

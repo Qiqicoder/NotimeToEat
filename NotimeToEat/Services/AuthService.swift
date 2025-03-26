@@ -19,13 +19,29 @@ class AuthService: ObservableObject {
     // Firestore引用
     private let db = Firestore.firestore()
     
-    private init() {
+    // 登录状态变更通知
+    var onLoginStateChanged: ((LoginStateChange) -> Void)? = { _ in 
+        print("登录状态变更处理器未设置") 
+    }
+    
+    // 登录状态变更类型
+    enum LoginStateChange {
+        case loggedIn(User)       // 新登录
+        case loggedOut(User)      // 登出
+        case switchedUser(oldUser: User, newUser: User)  // 切换用户
+    }
+    
+    init() {
+        print("AuthService 初始化中...")
         // 尝试从UserDefaults恢复用户登录状态
         restoreUserSession()
         
         // 监听Firebase认证状态变化
         Auth.auth().addStateDidChangeListener { [weak self] (_, user) in
             guard let self = self else { return }
+            
+            // 保存旧用户以便检测用户切换
+            let oldUser = self.currentUser
             
             if let firebaseUser = user {
                 // 用户已登录
@@ -37,21 +53,54 @@ class AuthService: ObservableObject {
                 )
                 
                 DispatchQueue.main.async {
+                    // 检查用户是否变更
+                    let isUserSwitched = self.isAuthenticated && oldUser.id != appUser.id
+                    let isNewLogin = !self.isAuthenticated
+                    
+                    // 更新当前用户
                     self.currentUser = appUser
                     self.isAuthenticated = true
                     self.saveUserSession()
                     
                     // 保存/更新用户信息到Firestore
                     self.saveUserToFirestore(user: appUser)
+                    
+                    // 通知登录状态变更
+                    if isNewLogin {
+                        // 新登录
+                        print("触发新登录事件: \(appUser.email ?? "unknown")")
+                        self.onLoginStateChanged?(.loggedIn(appUser))
+                    } else if isUserSwitched {
+                        // 切换用户
+                        print("触发用户切换事件: \(oldUser.email ?? "unknown") -> \(appUser.email ?? "unknown")")
+                        self.onLoginStateChanged?(.switchedUser(oldUser: oldUser, newUser: appUser))
+                    }
                 }
             } else {
                 // 用户已登出
                 DispatchQueue.main.async {
+                    let wasLoggedIn = self.isAuthenticated
+                    let previousUser = self.currentUser
+                    
                     self.currentUser = User.anonymous
                     self.isAuthenticated = false
                     self.saveUserSession()
+                    
+                    // 通知登出状态变更
+                    if wasLoggedIn {
+                        print("触发用户登出事件: \(previousUser.email ?? "unknown")")
+                        self.onLoginStateChanged?(.loggedOut(previousUser))
+                    }
                 }
             }
+        }
+        
+        print("AuthService 初始化完成，认证状态: \(isAuthenticated ? "已登录" : "未登录")")
+        
+        // 确保onLoginStateChanged在初始化结束时不是nil
+        if onLoginStateChanged == nil {
+            print("警告: onLoginStateChanged 在初始化结束时仍为 nil，设置默认空实现")
+            onLoginStateChanged = { _ in print("默认的登录状态处理器") }
         }
     }
     
@@ -244,6 +293,9 @@ class AuthService: ObservableObject {
     
     // 退出登录
     func signOut(completion: @escaping (Bool) -> Void) {
+        let previousUser = currentUser
+        print("开始登出用户: \(previousUser.email ?? "unknown")")
+        
         do {
             try Auth.auth().signOut()
             // 同时退出Google账号
@@ -258,12 +310,81 @@ class AuthService: ObservableObject {
             self.currentUser = User.anonymous
             self.isAuthenticated = false
             self.saveUserSession()
+            
+            // 通知登出状态
+            print("手动触发用户登出事件: \(previousUser.email ?? "unknown")")
+            self.onLoginStateChanged?(.loggedOut(previousUser))
+            
             completion(true)
+        }
+    }
+    
+    // MARK: - 数据同步处理
+    
+    /// 询问用户是否要上传本地数据到云端
+    /// - Parameters:
+    ///   - localFoodItems: 本地食物列表
+    ///   - uploadConfirmed: 用户确认上传回调
+    ///   - cancelAction: 用户取消操作回调
+    func promptForDataUpload(localFoodItems: [FoodItem], uploadConfirmed: @escaping ([FoodItem]) -> Void, cancelAction: @escaping () -> Void) {
+        // 这个方法不实际显示UI，它只是提供数据并回调。
+        // UI部分将由调用代码处理
+        
+        // 如果本地没有数据，直接跳过询问
+        if localFoodItems.isEmpty {
+            cancelAction()
+            return
+        }
+        
+        // 返回本地食物列表，让UI层询问用户
+        uploadConfirmed(localFoodItems)
+    }
+    
+    /// 询问用户是否要删除本地数据
+    /// - Parameters:
+    ///   - localFoodItems: 本地食物列表
+    ///   - deleteConfirmed: 用户确认删除回调
+    ///   - cancelAction: 用户取消操作回调
+    func promptForDataDeletion(localFoodItems: [FoodItem], deleteConfirmed: @escaping ([FoodItem]) -> Void, cancelAction: @escaping () -> Void) {
+        // 这个方法不实际显示UI，它只是提供数据并回调。
+        // UI部分将由调用代码处理
+        
+        // 如果本地没有数据，直接跳过询问
+        if localFoodItems.isEmpty {
+            cancelAction()
+            return
+        }
+        
+        // 返回本地食物列表，让UI层询问用户
+        deleteConfirmed(localFoodItems)
+    }
+    
+    /// 在登录后从Firestore拉取并合并数据
+    /// - Parameters:
+    ///   - localItems: 本地食物列表
+    ///   - completion: 合并完成回调，返回合并后的食物列表
+    func fetchAndMergeCloudData(localItems: [FoodItem], completion: @escaping ([FoodItem]) -> Void) {
+        // 使用FirestoreService获取云端数据
+        FirestoreService.shared.fetchFoodItems { cloudItems, error in
+            if let error = error {
+                print("从云端获取数据失败: \(error.localizedDescription)")
+                completion(localItems) // 如果失败，保持本地数据不变
+                return
+            }
+            
+            guard let cloudItems = cloudItems else {
+                completion(localItems) // 如果没有云端数据，保持本地数据不变
+                return
+            }
+            
+            // 合并本地和云端数据
+            let mergedItems = FirestoreService.shared.mergeFoodItems(localItems: localItems, cloudItems: cloudItems)
+            completion(mergedItems)
         }
     }
 }
 
 // 使Services能够访问AuthService
-extension Services {
-    typealias AuthService = NotimeToEat.AuthService
-} 
+//extension Services {
+//    typealias AuthService = AuthService
+//} 
