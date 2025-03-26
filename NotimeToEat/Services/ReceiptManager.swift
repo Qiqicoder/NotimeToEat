@@ -113,7 +113,7 @@ class ReceiptManager: ObservableObject {
             foodItemIDs.append(id)
         }
         
-        var ocrText: String? = nil
+        let ocrText: String? = nil
         
         // 创建接收
         let receipt = Models.Receipt(imageID: imageID, foodItemID: foodItemID, foodItemIDs: foodItemIDs, ocrText: ocrText)

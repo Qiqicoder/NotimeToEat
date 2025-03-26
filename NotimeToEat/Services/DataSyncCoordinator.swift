@@ -61,11 +61,10 @@ class DataSyncCoordinator: ObservableObject {
         // Using a capture list to avoid strong reference cycle
         authService.onLoginStateChanged = { [weak self] stateChange in
             guard let self = self else { return }
-            guard let foodStore = self.foodStore else {
+            guard self.foodStore != nil else {
                 print("错误: 收到登录状态变更事件，但FoodStore尚未注入")
                 return
             }
-            
             switch stateChange {
             case .loggedIn(let user):
                 // 用户登录（之前未登录）

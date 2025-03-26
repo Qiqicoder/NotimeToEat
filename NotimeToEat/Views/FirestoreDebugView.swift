@@ -1,5 +1,4 @@
 import SwiftUI
-import NotimeToEat
 import UIKit
 
 struct FirestoreDebugView: View {
@@ -427,12 +426,6 @@ struct FirestoreDebugView: View {
     
     // 发送测试好友请求
     private func sendTestFriendRequest() {
-        guard let currentUser = Services.Auth.auth().currentUser else {
-            alertMessage = "您需要先登录才能发送好友请求"
-            showingAlert = true
-            return
-        }
-        
         isRunningTest = true
         testResults = "正在发送测试好友请求..."
         

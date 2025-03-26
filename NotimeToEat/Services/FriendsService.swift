@@ -19,16 +19,25 @@ class FriendsService: ObservableObject {
     // 调试信息
     @Published var debugMessage: String = ""
     
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
+    
     private init() {
         // 当用户登录状态改变时，重新加载好友数据
-        Auth.auth().addStateDidChangeListener { [weak self] (_, user) in
-            if let user = user {
+        
+        authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] (_, user) in
+            if user != nil {
                 self?.loadFriends()
                 self?.loadPendingRequests()
             } else {
                 self?.friends = []
                 self?.pendingRequests = []
             }
+        }
+    }
+    
+    deinit {
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
         }
     }
     

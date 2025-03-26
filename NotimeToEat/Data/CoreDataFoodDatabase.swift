@@ -51,15 +51,6 @@ class CoreDataFoodDatabase: ObservableObject {
             // Sort alphabetically
             let sortedNames = uniqueNames.sorted()
             
-            // Print the first few entries for debugging
-            let maxEntriesToShow = min(5, results.count)
-            for i in 0..<maxEntriesToShow {
-                let obj = results[i]
-                let name = obj.value(forKey: "chineseName") as? String ?? "nil"
-                let englishName = obj.value(forKey: "englishName") as? String ?? "nil"
-                let category = obj.value(forKey: "category") as? String ?? "nil"
-            }
-            
             return sortedNames
         } catch {
             print("Error fetching food names: \(error.localizedDescription)")
@@ -281,18 +272,9 @@ class CoreDataFoodDatabase: ObservableObject {
     // Dump current database content for debugging
     func dumpDatabaseContent() {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CommonFood")
-        
         do {
             let results = try container.viewContext.fetch(fetchRequest) as? [NSManagedObject] ?? []
-            
             print("DEBUG: Total entries: \(results.count)")
-            
-            for (index, obj) in results.enumerated() {
-                let chineseName = obj.value(forKey: "chineseName") as? String ?? "nil"
-                let englishName = obj.value(forKey: "englishName") as? String ?? "nil"
-                let category = obj.value(forKey: "category") as? String ?? "nil"
-            }
-            
         } catch {
             print("Error dumping database: \(error.localizedDescription)")
         }

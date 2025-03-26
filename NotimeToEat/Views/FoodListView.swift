@@ -69,13 +69,13 @@ struct FoodListView: View {
             NavigationViewContent()
             FloatingAddButtons()
         }
-        .onChange(of: showingAddFood) { newValue in
+        .onChange(of: showingAddFood) { oldvalue, newValue in
             // 确保当表单关闭时，展开状态也被重置
             if !newValue && isAddButtonExpanded {
                 isAddButtonExpanded = false
             }
         }
-        .onChange(of: showingAddReceipt) { newValue in
+        .onChange(of: showingAddReceipt) { oldvalue, newValue in
             // 确保当表单关闭时，展开状态也被重置
             if !newValue && isAddButtonExpanded {
                 isAddButtonExpanded = false

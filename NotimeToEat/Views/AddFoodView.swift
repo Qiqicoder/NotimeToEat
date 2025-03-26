@@ -54,7 +54,8 @@ struct FoodNameInputView: View {
                     showSuggestions = !text.isEmpty && !suggestions.isEmpty
                 }
             })
-            .onChange(of: text) { newValue in
+            
+            .onChange(of: text) { oldValue, newValue in
                 updateSuggestions()
                 showSuggestions = isFocused && !newValue.isEmpty && !suggestions.isEmpty
             }

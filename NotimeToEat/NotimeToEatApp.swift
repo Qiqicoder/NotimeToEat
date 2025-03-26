@@ -9,7 +9,6 @@ import SwiftUI
 import GoogleSignIn
 import CoreData
 import UserNotifications
-import NotimeToEat
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth

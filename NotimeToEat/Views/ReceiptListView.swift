@@ -65,7 +65,7 @@ struct ReceiptListView: View {
                 #if os(iOS)
                 ImagePickerView(imageData: $receiptImageData, sourceType: .camera, onDismiss: {
                     showingCamera = false
-                    if let imageData = receiptImageData {
+                    if receiptImageData != nil {
                         showingProcessing = true
                     }
                 })
@@ -75,7 +75,7 @@ struct ReceiptListView: View {
                 #if os(iOS)
                 ImagePickerView(imageData: $receiptImageData, sourceType: .photoLibrary, onDismiss: {
                     showingPhotoLibrary = false
-                    if let imageData = receiptImageData {
+                    if receiptImageData != nil {
                         showingProcessing = true
                     }
                 })

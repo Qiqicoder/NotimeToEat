@@ -128,7 +128,7 @@ struct HistoryView: View {
             foodHistoryStore.load()
             updateWeekEntries()
         }
-        .onChange(of: selectedWeekIndex) { _ in
+        .onChange(of: selectedWeekIndex) { _, _ in
             updateWeekEntries()
         }
     }
@@ -157,7 +157,7 @@ struct HistoryView: View {
         let yearFormatter = DateFormatter()
         yearFormatter.dateFormat = "yyyy"
         
-        guard let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart) else {
+        guard calendar.date(byAdding: .day, value: 6, to: weekStart) != nil else {
             return NSLocalizedString("invalid_date", comment: "")
         }
         

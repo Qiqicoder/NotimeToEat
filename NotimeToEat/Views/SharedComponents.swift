@@ -82,9 +82,6 @@ struct WaveEdgeProgressShape: Shape {
         // 画到波浪开始的位置
         path.addLine(to: CGPoint(x: progressWidth - waveWidth, y: 0))
         
-        // 画波浪的右边缘
-        let waveStart = progressWidth - waveWidth
-        
         // 从顶部到底部遍历高度，画出波浪边缘
         for y in stride(from: 0, to: height, by: 1) {
             let relativeY = y / height

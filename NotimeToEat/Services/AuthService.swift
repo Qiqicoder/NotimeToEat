@@ -30,17 +30,16 @@ class AuthService: ObservableObject {
         case loggedOut(User)      // 登出
     }
     
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
+    
     init() {
         print("AuthService 初始化中...")
         // 尝试从UserDefaults恢复用户登录状态
         restoreUserSession()
         
         // 监听Firebase认证状态变化
-        Auth.auth().addStateDidChangeListener { [weak self] (_, user) in
+        authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] (_, user) in
             guard let self = self else { return }
-            
-            // 保存旧用户以便检测用户切换
-            let oldUser = self.currentUser
             
             if let firebaseUser = user {
                 // 用户已登录
@@ -97,9 +96,15 @@ class AuthService: ObservableObject {
         }
     }
     
+    deinit {
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
+    
     // 恢复用户会话
     private func restoreUserSession() {
-        if var userData = UserDefaults.standard.data(forKey: userDefaultsKey),
+        if let userData = UserDefaults.standard.data(forKey: userDefaultsKey),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             self.currentUser = user
             self.isAuthenticated = user.isLoggedIn
@@ -116,7 +121,7 @@ class AuthService: ObservableObject {
     // 将用户信息保存到Firestore
     private func saveUserToFirestore(user: User) {
         var userData: [String: Any] = [
-            "email": user.email,
+            "email": user.email ?? "email@email.com",
             "displayName": user.displayName ?? "用户",
             "lastActive": FieldValue.serverTimestamp()
         ]
