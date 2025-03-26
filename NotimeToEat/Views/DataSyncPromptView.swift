@@ -25,6 +25,7 @@ struct DataSyncPromptView: View {
     let onCancel: () -> Void
     
     @State private var isAnimating = false
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 20) {
@@ -50,33 +51,10 @@ struct DataSyncPromptView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             
-            // 数据概要
-            VStack(alignment: .leading, spacing: 8) {
-                Text("数据概要：")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                
-                HStack {
-                    Text("• 食物项：")
-                    Text("\(foodItems.count)个")
-                        .fontWeight(.medium)
-                }
-                
-                // 按分类显示统计信息
-                let categories = Dictionary(grouping: foodItems, by: { $0.category })
-                ForEach(Array(categories.keys).sorted(by: { $0.rawValue < $1.rawValue }), id: \.self) { category in
-                    if let count = categories[category]?.count, count > 0 {
-                        HStack {
-                            Text("• \(categoryName(category))：")
-                            Text("\(count)个")
-                                .fontWeight(.medium)
-                        }
-                    }
-                }
-            }
+
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(Color.gray.opacity(0.1))
+            .background(cardBackgroundColor.opacity(0.2))
             .cornerRadius(10)
             .padding(.horizontal)
             
@@ -88,8 +66,8 @@ struct DataSyncPromptView: View {
                         .fontWeight(.medium)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .foregroundColor(.primary)
+                        .background(buttonCancelBackgroundColor)
+                        .foregroundColor(buttonCancelTextColor)
                         .cornerRadius(10)
                 }
                 
@@ -108,7 +86,8 @@ struct DataSyncPromptView: View {
             .padding(.bottom)
         }
         .frame(maxWidth: 350)
-        .background(Color.white)
+        .background(promptBackgroundColor)
+        .foregroundColor(promptTextColor)
         .cornerRadius(20)
         .shadow(radius: 20)
     }
@@ -131,7 +110,7 @@ struct DataSyncPromptView: View {
         case .uploadLocal:
             return "检测到本地有数据，是否要上传到云端？这样可以在其他设备上访问您的数据。"
         case .deleteLocal:
-            return "您确定要删除本地数据吗？此操作不可撤销。"
+            return "是否删除保存在本地的数据？此操作不可撤销。"
         case .switchUser:
             return "您正在切换到另一个账号。是否要先上传当前账号的数据以避免丢失？"
         }
@@ -181,64 +160,26 @@ struct DataSyncPromptView: View {
         }
     }
     
-    // 获取分类的中文名称
-    private func categoryName(_ category: Category) -> String {
-        switch category {
-        case .vegetable: return "蔬菜"
-        case .fruit: return "水果"
-        case .meat: return "肉类"
-        case .seafood: return "海鲜"
-        case .dairy: return "乳制品"
-        case .grain: return "主食/谷物"
-        case .beverage: return "饮料"
-        case .snack: return "零食"
-        case .condiment: return "调味品"
-        case .other: return "其他"
-        }
+    // 主题相关属性
+    private var promptBackgroundColor: Color {
+        colorScheme == .dark ? Color(UIColor.systemBackground) : Color.white
     }
-}
+    
+    private var promptTextColor: Color {
+        colorScheme == .dark ? Color.white : Color.black
+    }
+    
+    private var cardBackgroundColor: Color {
+        colorScheme == .dark ? Color.gray : Color.gray
+    }
+    
+    private var buttonCancelBackgroundColor: Color {
+        colorScheme == .dark ? Color(UIColor.tertiarySystemFill) : Color.gray.opacity(0.2)
+    }
+    
+    private var buttonCancelTextColor: Color {
+        colorScheme == .dark ? Color.white : Color.primary
+    }
+    
 
-#if DEBUG
-struct DataSyncPromptView_Previews: PreviewProvider {
-    static var previews: some View {
-        ZStack {
-            Color.black.opacity(0.4)
-                .edgesIgnoringSafeArea(.all)
-            
-            DataSyncPromptView(
-                promptType: .uploadLocal,
-                foodItems: FoodItem.sampleItems,
-                onConfirm: {},
-                onCancel: {}
-            )
-        }
-        .previewDisplayName("上传数据")
-        
-        ZStack {
-            Color.black.opacity(0.4)
-                .edgesIgnoringSafeArea(.all)
-            
-            DataSyncPromptView(
-                promptType: .deleteLocal,
-                foodItems: FoodItem.sampleItems,
-                onConfirm: {},
-                onCancel: {}
-            )
-        }
-        .previewDisplayName("删除数据")
-        
-        ZStack {
-            Color.black.opacity(0.4)
-                .edgesIgnoringSafeArea(.all)
-            
-            DataSyncPromptView(
-                promptType: .switchUser,
-                foodItems: FoodItem.sampleItems,
-                onConfirm: {},
-                onCancel: {}
-            )
-        }
-        .previewDisplayName("切换用户")
-    }
 }
-#endif 
