@@ -27,7 +27,6 @@ class CoreDataFoodDatabase: ObservableObject {
     var allFoodNames: [String] {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CommonFood")
         
-        print("DEBUG: Fetching all food names from database")
         
         do {
             let results = try container.viewContext.fetch(fetchRequest) as? [NSManagedObject] ?? []
@@ -59,10 +58,8 @@ class CoreDataFoodDatabase: ObservableObject {
                 let name = obj.value(forKey: "chineseName") as? String ?? "nil"
                 let englishName = obj.value(forKey: "englishName") as? String ?? "nil"
                 let category = obj.value(forKey: "category") as? String ?? "nil"
-                print("DEBUG: Entry \(i): chineseName='\(name)', englishName='\(englishName)', category='\(category)'")
             }
             
-            print("DEBUG: Returning \(sortedNames.count) food names (combined Chinese and English, alphabetically sorted)")
             return sortedNames
         } catch {
             print("Error fetching food names: \(error.localizedDescription)")
@@ -79,7 +76,6 @@ class CoreDataFoodDatabase: ObservableObject {
         let predicate2 = NSPredicate(format: "category CONTAINS[cd] %@", categoryString)
         fetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [predicate1, predicate2])
         
-        print("DEBUG: Querying for foods in category: '\(categoryString)'")
         
         do {
             let results = try container.viewContext.fetch(fetchRequest) as? [NSManagedObject] ?? []
@@ -265,14 +261,12 @@ class CoreDataFoodDatabase: ObservableObject {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CommonFood")
         fetchRequest.predicate = NSPredicate(format: "chineseName == %@", foodName)
         
-        print("DEBUG: Looking up category for food: '\(foodName)'")
         
         do {
             let results = try container.viewContext.fetch(fetchRequest) as? [NSManagedObject] ?? []
             
             if let result = results.first {
                 let category = result.value(forKey: "category") as? String
-                print("DEBUG: Found category '\(category ?? "nil")' for food '\(foodName)'")
                 return category
             }
             
@@ -291,18 +285,14 @@ class CoreDataFoodDatabase: ObservableObject {
         do {
             let results = try container.viewContext.fetch(fetchRequest) as? [NSManagedObject] ?? []
             
-            print("DEBUG: ====== DATABASE CONTENT DUMP ======")
             print("DEBUG: Total entries: \(results.count)")
             
             for (index, obj) in results.enumerated() {
                 let chineseName = obj.value(forKey: "chineseName") as? String ?? "nil"
                 let englishName = obj.value(forKey: "englishName") as? String ?? "nil"
                 let category = obj.value(forKey: "category") as? String ?? "nil"
-                
-                print("DEBUG: Entry \(index): chineseName='\(chineseName)', englishName='\(englishName)', category='\(category)'")
             }
             
-            print("DEBUG: ====== END OF DATABASE DUMP ======")
         } catch {
             print("Error dumping database: \(error.localizedDescription)")
         }
@@ -368,8 +358,6 @@ class CoreDataFoodDatabase: ObservableObject {
     var allEnglishFoodNames: [String] {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CommonFood")
         
-        print("DEBUG: Fetching all English food names from database")
-        
         do {
             let results = try container.viewContext.fetch(fetchRequest) as? [NSManagedObject] ?? []
             
@@ -380,7 +368,6 @@ class CoreDataFoodDatabase: ObservableObject {
             // 按字母顺序排序
             let sortedNames = englishNames.sorted()
             
-            print("DEBUG: Found \(sortedNames.count) English food names (alphabetically sorted)")
             
             return sortedNames
         } catch {
